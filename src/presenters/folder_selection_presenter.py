@@ -1,4 +1,4 @@
-from src.core.usecases.folder_selection_usecase import FolderSelectionUseCase
+from src.core.usecases import FolderSelectionUseCase
 
 
 class FolderSelectionPresenter:

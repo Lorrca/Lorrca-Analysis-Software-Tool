@@ -2,16 +2,17 @@ from typing import Optional
 
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QPushButton, QLabel, QWidget
 
+from src.presenters import FolderSelectionPresenter
+
 
 class MainWindow(QMainWindow):
-	def __init__(self, presenter):
+	def __init__(self):
 		super().__init__()
 		self.selected_folders_label = None
 		self.select_hc_data_button = None
 		self.select_data_button = None
 		self.select_results_button = None
-		self.presenter = presenter
-		self.init_ui()
+		self.presenter = None
 
 		# Initialize folder paths with None
 		self.selected_folders: dict[str, Optional[str]] = {
@@ -46,6 +47,12 @@ class MainWindow(QMainWindow):
 		container.setLayout(layout)
 		self.setCentralWidget(container)
 
+	def set_presenter(self, presenter: FolderSelectionPresenter):
+		try:
+			self.presenter = presenter
+			self.init_ui()
+		except Exception as e:
+			print(f'Failed to load presenter. Error: {e}')
 	# Methods to update the UI from the presenter
 	def set_data_folder(self, folder: str):
 		self.selected_folders["data"] = folder
