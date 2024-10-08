@@ -6,10 +6,12 @@ class OsmoModel:
     def __init__(self, osmo_data: dict):
         self.data = osmo_data
         #
-        self._ei_max = self._calculate_ei_max()
-        self._ei_hyper = self._calculate_ei_hyper()
-        self._o_max, self._o_max_idx = self._get_o_max()
+        self._ei_max = self._calculate_ei_max_value()
+        self._ei_hyper = self._calculate_ei_hyper_value()
+        self._o_max, self._o_max_idx = self._get_o_max_value_and_inx()
         self._o_hyper = self._calculate_o_hyper()
+        self._first_peak_idx = self._get_peak_with_highest_prominence()
+        self._valley_idx = self._get_valley_with_highest_prominence()
 
     @property
     def ei(self):
@@ -35,6 +37,19 @@ class OsmoModel:
     def o_max(self):
         return self._o_max
 
+    @property
+    def o_max_idx(self):
+        return self._o_max_idx
+
+    @property
+    def first_peak_idx(self):
+        return self._first_peak_idx
+
+    @property
+    def valley_idx(self):
+        return self._valley_idx
+
+
     def _get_data_column(self, column: str) -> np.ndarray:
         value = self.data.get(column)
         if value is not None:
@@ -42,15 +57,15 @@ class OsmoModel:
         else:
             raise KeyError(f"The column '{column}' does not exist.")
 
-    def _calculate_ei_max(self):
+    def _calculate_ei_max_value(self):
         return max(self.ei)
 
-    def _calculate_ei_hyper(self):
+    def _calculate_ei_hyper_value(self):
         if self.ei_max is None:
             raise ValueError("EI max has not been calculated.")
         return self.ei_max / 2
 
-    def _get_o_max(self):
+    def _get_o_max_value_and_inx(self):
         # Find the indices where EI equals EI_max
         indices = np.nonzero(self.ei == self.ei_max)[0]
 
@@ -97,7 +112,7 @@ class OsmoModel:
 
         return None  # If no point found
 
-    def find_peak_with_highest_prominence(self):
+    def _get_peak_with_highest_prominence(self):
         filtered_ei = self.ei[:self._o_max_idx]
 
         peaks, properties = find_peaks(filtered_ei, prominence=0)
@@ -105,3 +120,11 @@ class OsmoModel:
         highest_prominence_idx = np.argmax(prominences)
         highest_prominence_peak_idx = peaks[highest_prominence_idx]
         return highest_prominence_peak_idx
+
+    def _get_valley_with_highest_prominence(self):
+        filtered_ei = self.ei[self._first_peak_idx:self._o_max_idx]
+        valleys, properties = find_peaks(-filtered_ei, prominence=0)
+        prominences = properties['prominences']
+        lowest_prominence_idx = np.argmax(prominences)
+        valley_idx = valleys[lowest_prominence_idx] + self._first_peak_idx
+        return valley_idx

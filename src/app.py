@@ -110,7 +110,8 @@ ei_hyper = model.ei_hyper
 o_max = model.o_max
 o_hyper = model.o_hyper
 
-first_peak = model.find_peak_with_highest_prominence()
+valley_idx = model.valley_idx
+peak_idx = model.first_peak_idx
 
 
 def main():
@@ -132,9 +133,12 @@ def plot_chart():
     ax.plot(model.o, model.ei, label='EI', linewidth=1)
 
     # Mark the peak with the highest prominence
-    ax.plot(model.o[first_peak], model.ei[first_peak],
-            "x", color='red', markersize=6,
-            label='Highest Prominence Peak')  # Highest prominence peak
+    ax.plot(model.o[peak_idx], model.ei[peak_idx],
+            "o", color='g', markersize=4,
+             label='Highest Prominence Peak')
+
+    ax.plot(model.o[valley_idx], model.ei[valley_idx], "o",
+             label="Highest Prominence Valley", color="r", markersize=4)
 
     # Plot vertical lines to o_hyper and o_max
     ax.plot([o_hyper, o_hyper], [min(model.ei), ei_hyper], color='r',
