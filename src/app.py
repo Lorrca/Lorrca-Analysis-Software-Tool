@@ -1,7 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
-
-from scipy.signal import find_peaks
 
 from src.core.entities.osmo_model import OsmoModel
 
@@ -101,7 +98,6 @@ data = {
         606.67, 608.11,
         609.46, 610.85, 612.37
     ]
-
 }
 
 model = OsmoModel(data)
@@ -113,6 +109,8 @@ ei_hyper = model.ei_hyper
 # (O) Osmolality values
 o_max = model.o_max
 o_hyper = model.o_hyper
+
+first_peak = model.find_peak_with_highest_prominence()
 
 
 def main():
@@ -133,22 +131,10 @@ def plot_chart():
     # Plot original points and the polynomial curve
     ax.plot(model.o, model.ei, label='EI', linewidth=1)
 
-    # Find peaks in the EI values
-    _ei_max_index = np.argmax(np.array(model.ei))
-    filtered_ei = np.array(model.ei[:_ei_max_index])
-    peaks, properties = find_peaks(np.array(filtered_ei), prominence=0)
-    prominences = properties['prominences']
-    highest_prominence_index = np.argmax(prominences)
-    highest_prominence_peak_index = peaks[highest_prominence_index]
-    highest_prominence_value = model.ei[highest_prominence_peak_index]
-    ax.plot(np.array(model.o)[peaks], np.array(model.ei)[peaks], "x",
-            color='red', label='Peaks')
-
     # Mark the peak with the highest prominence
-    ax.plot(model.o[highest_prominence_peak_index], highest_prominence_value,
-            "o", color='green', markersize=10,
+    ax.plot(model.o[first_peak], model.ei[first_peak],
+            "x", color='red', markersize=6,
             label='Highest Prominence Peak')  # Highest prominence peak
-    
 
     # Plot vertical lines to o_hyper and o_max
     ax.plot([o_hyper, o_hyper], [min(model.ei), ei_hyper], color='r',

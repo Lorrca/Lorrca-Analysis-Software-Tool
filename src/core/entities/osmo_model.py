@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import find_peaks
 
 
 class OsmoModel:
@@ -7,7 +8,7 @@ class OsmoModel:
         #
         self._ei_max = self._calculate_ei_max()
         self._ei_hyper = self._calculate_ei_hyper()
-        self._o_max = self._get_o_max()
+        self._o_max, self._o_max_idx = self._get_o_max()
         self._o_hyper = self._calculate_o_hyper()
 
     @property
@@ -34,10 +35,10 @@ class OsmoModel:
     def o_max(self):
         return self._o_max
 
-    def _get_data_column(self, column: str) -> list:
+    def _get_data_column(self, column: str) -> np.ndarray:
         value = self.data.get(column)
         if value is not None:
-            return value
+            return np.array(value)
         else:
             raise KeyError(f"The column '{column}' does not exist.")
 
@@ -50,23 +51,26 @@ class OsmoModel:
         return self.ei_max / 2
 
     def _get_o_max(self):
-        indices = [i for i, ei_value in enumerate(self.ei) if
-                   ei_value == self.ei_max]
-        if not indices:
-            raise ValueError("EI max not found in the EI list")
-        center_index = indices[len(indices) // 2]
-        return self.o[center_index]
+        # Find the indices where EI equals EI_max
+        indices = np.nonzero(self.ei == self.ei_max)[0]
+
+        if len(indices) == 0:
+            raise ValueError("EI max not found in the EI array")
+
+        # Get the middle index if there are multiple occurrences of EI_max
+        _center_idx = indices[len(indices) // 2]
+
+        # Return the corresponding O value and the index
+        return self.o[_center_idx], _center_idx
 
     def _calculate_o_hyper(self):
         # Check if EI_hyper is calculated
         if self.ei_hyper is None:
             raise ValueError("EI hyper has not been calculated.")
 
-        o_max_pos = self.o.index(self._o_max)
-
         # Get the relevant part of the curve
-        relevant_ei_values = self.ei[o_max_pos + 1:]
-        relevant_o_values = self.o[o_max_pos + 1:]
+        relevant_ei_values = self.ei[self._o_max_idx:]
+        relevant_o_values = self.o[self._o_max_idx:]
 
         if len(relevant_ei_values) < 2:
             raise ValueError(
@@ -75,10 +79,10 @@ class OsmoModel:
         # Search if EI_hyper already exist or for the first point where EI < EI_hyper
         for i, ei_value in enumerate(relevant_ei_values):
             # Check for an exact match with EI_hyper
-            if ei_value == self.ei_hyper:
+            if ei_value == self._ei_hyper:
                 return relevant_o_values[i]
 
-            elif ei_value < self.ei_hyper:
+            elif ei_value < self._ei_hyper:
                 # Perform linear interpolation
                 # Get the previous and current points for interpolation
                 if i == 0:
@@ -88,7 +92,16 @@ class OsmoModel:
                 x2, y2 = relevant_ei_values[i], relevant_o_values[i]
 
                 # Calculate O hyper using linear interpolation
-                _o_hyper = y1 + (y2 - y1) * (self.ei_hyper - x1) / (x2 - x1)
-                return _o_hyper
+                o_hyper = y1 + (y2 - y1) * (self._ei_hyper - x1) / (x2 - x1)
+                return o_hyper
 
         return None  # If no point found
+
+    def find_peak_with_highest_prominence(self):
+        filtered_ei = self.ei[:self._o_max_idx]
+
+        peaks, properties = find_peaks(filtered_ei, prominence=0)
+        prominences = properties['prominences']
+        highest_prominence_idx = np.argmax(prominences)
+        highest_prominence_peak_idx = peaks[highest_prominence_idx]
+        return highest_prominence_peak_idx
