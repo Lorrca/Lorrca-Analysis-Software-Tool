@@ -1,6 +1,6 @@
 import unittest
 
-from src.core.entities.osmo_model import OsmoModel
+from src.core.models.osmo_model import OsmoModel
 
 
 class TestOsmoModel(unittest.TestCase):
