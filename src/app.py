@@ -132,17 +132,17 @@ def console_output():
 def plot_chart():
     _fig, ax = plt.subplots(figsize=(16, 9))
 
-    # Plot original points and the polynomial curve
+    # Plot original points
     ax.plot(model.o, model.ei, label='EI', linewidth=1)
 
     valley_upper_idx = find_breaking_point(ax, valley_idx, o_max_idx, 5,
                                            "Left")
 
     # Valley polynomial
-    plot_polynomial(ax, peak_idx, valley_upper_idx, 4)
+    plot_polynomial(ax, peak_idx, valley_upper_idx, 4, "valley")
 
     # Top part polynomial
-    plot_polynomial(ax, valley_upper_idx, int(len(model.o) * 0.45), 4)
+    plot_polynomial(ax, valley_upper_idx, int(len(model.o) * 0.45), 4, "bump")
 
     # Add title and labels
     ax.set_xlabel('Osmolality [mOsm/kg]')
@@ -154,35 +154,81 @@ def plot_chart():
     plt.show()
 
 
-def plot_polynomial(ax, lower_idx, upper_idx, degree: int):
+def plot_polynomial(ax, lower_idx, upper_idx, degree: int, adjust_type: str):
+    """Main function to fit and plot the polynomial with manual adjustment type (bump or valley)."""
+    relevant_o, relevant_ei = get_relevant_data(lower_idx, upper_idx + 1)
+    polynomial = fit_polynomial(relevant_o, relevant_ei, degree)
+
+    # Adjust polynomial based on the user-specified type: bump or valley
+    adjusted_polynomial, o_fit, ei_adjusted_fit = adjust_polynomial(relevant_o,
+                                                                    relevant_ei,
+                                                                    polynomial,
+                                                                    adjust_type)
+
+    # Plot the results
+    plot_adjusted_polynomial(ax, o_fit, ei_adjusted_fit, degree)
+
+    return adjusted_polynomial, o_fit, ei_adjusted_fit
+
+
+def get_relevant_data(lower_idx, upper_idx):
+    """Get the relevant 'o' and 'ei' data within the specified index range."""
     relevant_o = model.o[lower_idx:upper_idx]
     relevant_ei = model.ei[lower_idx:upper_idx]
+    return relevant_o, relevant_ei
 
+
+def fit_polynomial(relevant_o, relevant_ei, degree):
+    """Fit a polynomial of the given degree to the relevant data."""
     coefficients = np.polyfit(relevant_o, relevant_ei, degree)
-    polynomial = np.poly1d(coefficients)
+    return np.poly1d(coefficients)
 
+
+def adjust_polynomial(relevant_o, relevant_ei, polynomial, adjust_type: str):
+    """Adjust the polynomial based on the user-defined adjustment type: bump or valley."""
     o_fit = np.linspace(min(relevant_o), max(relevant_o), 500)
 
-    exceeding_indices = np.nonzero(relevant_ei > polynomial(relevant_o))[0]
+    if adjust_type == "bump":
+        return adjust_for_bump(relevant_o, relevant_ei, polynomial, o_fit)
+    elif adjust_type == "valley":
+        return adjust_for_valley(relevant_o, relevant_ei, polynomial, o_fit)
+    else:
+        raise ValueError("Invalid adjust_type. Use 'bump' or 'valley'.")
 
-    # Find the index of the maximum exceeding value
+
+def adjust_for_bump(relevant_o, relevant_ei, polynomial, o_fit):
+    """Adjust the polynomial to fit the highest exceeding point (bump)."""
+    exceeding_indices = np.nonzero(relevant_ei > polynomial(relevant_o))[0]
     max_exceeding_index = exceeding_indices[np.argmax(
         relevant_ei[exceeding_indices] - polynomial(
             relevant_o[exceeding_indices]))]
-
-    # Get the maximum exceeding value and its corresponding O and EI values
     max_exceeding_value = relevant_ei[max_exceeding_index] - polynomial(
         relevant_o[max_exceeding_index])
 
-    # Step 5: Shift the polynomial to be above the exceeding points
     adjusted_polynomial = polynomial + max_exceeding_value
-
-    # Generate the adjusted polynomial curve
     ei_adjusted_fit = adjusted_polynomial(o_fit)
 
-    # Plot the adjusted polynomial
-    ax.plot(o_fit, ei_adjusted_fit, 'r', label='Adjusted Polynomial',
-            linewidth=0.75)
+    return adjusted_polynomial, o_fit, ei_adjusted_fit
+
+
+def adjust_for_valley(relevant_o, relevant_ei, polynomial, o_fit):
+    """Adjust the polynomial to fit the lowest exceeding point (valley)."""
+    exceeding_indices = np.nonzero(relevant_ei < polynomial(relevant_o))[0]
+    min_exceeding_index = exceeding_indices[np.argmin(
+        relevant_ei[exceeding_indices] - polynomial(
+            relevant_o[exceeding_indices]))]
+    min_exceeding_value = relevant_ei[min_exceeding_index] - polynomial(
+        relevant_o[min_exceeding_index])
+
+    adjusted_polynomial = polynomial + min_exceeding_value
+    ei_adjusted_fit = adjusted_polynomial(o_fit)
+
+    return adjusted_polynomial, o_fit, ei_adjusted_fit
+
+
+def plot_adjusted_polynomial(ax, o_fit, ei_adjusted_fit, degree):
+    """Plot the adjusted polynomial curve."""
+    ax.plot(o_fit, ei_adjusted_fit, label=f"Degree {degree} Fit")
 
 
 def find_breaking_point(ax, start_index, end_index, degree: int, side: str):
@@ -223,16 +269,14 @@ def find_breaking_point(ax, start_index, end_index, degree: int, side: str):
 
         # Display the highest breaking point as a red cross
         ax.plot(model.o[original_index], model.ei[original_index], "x",
-                color='red', label=f'{side}: Breaking Point')
+                color='red',
+                label=f'{side}: Breaking Point ({model.o[original_index]}, {model.ei[original_index]})')
 
-        print(
-            f"{side}: breaking point ({model.o[original_index]}, {model.ei[original_index]})")
-
-        return int(
-            original_index)  # Return the index based on the original array
+        return original_index  # Return the index based on the original array
     else:
         print(f"No breaking points found for {side}.")
-        return None  # No breaking points found
+
+    return None  # No breaking points found
 
 
 if __name__ == "__main__":
