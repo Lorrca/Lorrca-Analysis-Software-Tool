@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import minimize
 
 from src.core.models.osmo_model import OsmoModel
 
 data = {
-    "EI": [
+    "EI": np.array([
         0.117, 0.118, 0.128, 0.115, 0.108, 0.11, 0.107, 0.13, 0.171, 0.209,
         0.236, 0.265, 0.261, 0.251, 0.241, 0.235, 0.231, 0.228, 0.228,
         0.232,
@@ -51,8 +50,8 @@ data = {
         -0.098, -0.096, -0.094, -0.092, -0.089, -0.086, -0.084, -0.082,
         -0.079, -0.078,
         -0.076, -0.075, -0.073
-    ],
-    "O.": [
+    ]),
+    "O.": np.array([
         66.75, 73.2, 75.76, 77.6, 79.24, 83.62, 85.99, 88.57, 91.07, 93.49,
         95.86, 98.16, 100.45, 102.83, 105.12, 107.29, 109.5, 111.75,
         113.88, 115.97,
@@ -99,7 +98,7 @@ data = {
         593.94, 595.62, 597.13, 598.93, 600.65, 602.05, 603.81, 605.12,
         606.67, 608.11,
         609.46, 610.85, 612.37
-    ]
+    ])
 }
 
 model = OsmoModel(data)
@@ -136,46 +135,14 @@ def plot_chart():
     # Plot original points and the polynomial curve
     ax.plot(model.o, model.ei, label='EI', linewidth=1)
 
-    # EI_max
-    # ax.plot(model.o[o_max_idx], model.ei[o_max_idx], "o", color="yellow",
-    #         label=f"Original EI_max ({ei_max})", markersize=4)
-
-    # Mark the peak with the highest prominence
-    # ax.plot(model.o[peak_idx], model.ei[peak_idx],
-    #         "o", color="g", markersize=4,
-    #         label=f"Highest Prominence Peak ({round(model.o[peak_idx])}, {model.ei[peak_idx]})")
-    #
-    # ax.plot(model.o[valley_idx], model.ei[valley_idx], "o",
-    #         label=f"Highest Prominence Valley ({round(model.o[valley_idx])}, {model.ei[valley_idx]})",
-    #         color="r", markersize=4)
-
-    # Plot points for EI_max and EI_hyper
-    # ax.plot(o_max, ei_max, "o",
-    #         label=f"EI_max {round(o_max), round(ei_max, 3)}", color="orange",
-    #         markersize="4")
-    # ax.plot(o_hyper, ei_hyper, "o",
-    #         label=f"EI_Hyper {round(o_hyper), round(ei_hyper, 3)}",
-    #         color="pink", markersize="4")
-
-    # Plot vertical lines to o_hyper and o_max
-    # ax.plot([o_hyper, o_hyper], [min(model.ei), ei_hyper], color='r',
-    #         linestyle='--', linewidth=0.75)  # O_hyper vertical line
-    # ax.plot([o_max, o_max], [min(model.ei), ei_max], color='r',
-    #         linestyle='--', linewidth=0.75)  # O_max vertical line
-
-    valley_upper_idx = find_breaking_point(ax, valley_idx, o_max_idx, 5, "Left")
-    print(f"Peak Index: {model.o[peak_idx]}, {model.ei[peak_idx]}")
-    print(f"Valley Upper Index: {model.o[valley_upper_idx]}, {model.ei[valley_upper_idx]}")
+    valley_upper_idx = find_breaking_point(ax, valley_idx, o_max_idx, 5,
+                                           "Left")
 
     # Valley polynomial
-    plot_poly_chart_middle(ax, peak_idx, valley_upper_idx, 4)
+    plot_polynomial(ax, peak_idx, valley_upper_idx, 4)
 
     # Top part polynomial
-    plot_poly_chart_middle(ax, valley_upper_idx, int(len(model.o) * 0.45), 4)
-    print(f"Valley Upper Index: {model.o[valley_upper_idx]}, {model.ei[valley_upper_idx]}")
-    print(f"Rigth Limit: {model.o[int(len(model.o) * 0.45)]}, {model.ei[int(len(model.o) * 0.45)]}")
-
-    # find_breaking_point(ax, o_max_idx, len(model.o)-70, 5, "Right")
+    plot_polynomial(ax, valley_upper_idx, int(len(model.o) * 0.45), 4)
 
     # Add title and labels
     ax.set_xlabel('Osmolality [mOsm/kg]')
@@ -187,25 +154,25 @@ def plot_chart():
     plt.show()
 
 
-def plot_poly_chart_middle(ax, lower_idx, upper_idx, degree: int):
-    o_middle = model.o[lower_idx:upper_idx]
-    ei_middle = model.ei[lower_idx:upper_idx]
+def plot_polynomial(ax, lower_idx, upper_idx, degree: int):
+    relevant_o = model.o[lower_idx:upper_idx]
+    relevant_ei = model.ei[lower_idx:upper_idx]
 
-    coefficients = np.polyfit(o_middle, ei_middle, degree)
+    coefficients = np.polyfit(relevant_o, relevant_ei, degree)
     polynomial = np.poly1d(coefficients)
 
-    o_fit = np.linspace(min(o_middle), max(o_middle), 500)
+    o_fit = np.linspace(min(relevant_o), max(relevant_o), 500)
 
-    exceeding_indices = np.nonzero(ei_middle > polynomial(o_middle))[0]
+    exceeding_indices = np.nonzero(relevant_ei > polynomial(relevant_o))[0]
 
     # Find the index of the maximum exceeding value
     max_exceeding_index = exceeding_indices[np.argmax(
-        ei_middle[exceeding_indices] - polynomial(
-            o_middle[exceeding_indices]))]
+        relevant_ei[exceeding_indices] - polynomial(
+            relevant_o[exceeding_indices]))]
 
     # Get the maximum exceeding value and its corresponding O and EI values
-    max_exceeding_value = ei_middle[max_exceeding_index] - polynomial(
-        o_middle[max_exceeding_index])
+    max_exceeding_value = relevant_ei[max_exceeding_index] - polynomial(
+        relevant_o[max_exceeding_index])
 
     # Step 5: Shift the polynomial to be above the exceeding points
     adjusted_polynomial = polynomial + max_exceeding_value
@@ -213,32 +180,9 @@ def plot_poly_chart_middle(ax, lower_idx, upper_idx, degree: int):
     # Generate the adjusted polynomial curve
     ei_adjusted_fit = adjusted_polynomial(o_fit)
 
-    # Use an optimization method to find the maximum
-    # Provide an initial guess within the range of O_middle
-    initial_guess = np.mean(o_middle)
-    result = minimize(lambda O: -adjusted_polynomial(O), initial_guess,
-                      bounds=[(min(o_middle), max(o_middle))])
-
-    # Get the highest point for the adjusted polynomial
-    highest_o = result.x[0]
-    highest_ei = adjusted_polynomial(highest_o)
-
-    # Plot the original fitted polynomial
-    # ax.plot(o_fit, ei_fit, "r--", label='Original Fitted Polynomial', linewidth=1)
     # Plot the adjusted polynomial
     ax.plot(o_fit, ei_adjusted_fit, 'r', label='Adjusted Polynomial',
             linewidth=0.75)
-
-    # Plot max exceeding point
-    # ax.plot(o_middle[max_exceeding_index], ei_middle[max_exceeding_index], "x",
-    #         color="yellow", markersize=6)
-
-    # Polynomial max point
-    # ax.plot(highest_o, highest_ei, "o", color="g", markersize=4,
-    #         label=f"Polynomial EI_max({round(highest_ei, 3)})")
-
-    # ax.scatter(o_middle[exceeding_indices], ei_middle[exceeding_indices],
-    #            color='purple', label='Exceeding Points', s=50)
 
 
 def find_breaking_point(ax, start_index, end_index, degree: int, side: str):
@@ -252,7 +196,6 @@ def find_breaking_point(ax, start_index, end_index, degree: int, side: str):
 
     # Step 3: Generate a smooth range of O values for plotting and derivative calculations
     o_fit = np.linspace(min(o_segment), max(o_segment))
-    ei_fit = polynomial(o_fit)
 
     # Step 4: Calculate the first and second derivatives of the polynomial
     first_derivative = np.polyder(polynomial)
@@ -263,14 +206,10 @@ def find_breaking_point(ax, start_index, end_index, degree: int, side: str):
 
     # Step 6: Find breaking points where the second derivative changes sign
     breaking_points_indices = \
-    np.nonzero(np.diff(np.sign(second_derivative_values)))[0]
+        np.nonzero(np.diff(np.sign(second_derivative_values)))[0]
     breaking_points_o = o_fit[breaking_points_indices]
     breaking_points_ei = polynomial(breaking_points_o)
 
-    # Plot the polynomial fit
-    # ax.plot(o_fit, ei_fit, 'b--', label='Polynomial Fit')
-    #
-    # ax.plot(breaking_points_o, breaking_points_ei, "x", color="orange", label='Breaking Points')
     # Step 7: Find the highest breaking point
     if len(breaking_points_ei) > 0:  # Check if there are any breaking points
         highest_breaking_index = np.argmax(breaking_points_ei)

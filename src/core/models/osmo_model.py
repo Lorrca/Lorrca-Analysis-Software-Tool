@@ -3,7 +3,7 @@ from scipy.signal import find_peaks
 
 
 class OsmoModel:
-    def __init__(self, osmo_data: dict):
+    def __init__(self, osmo_data: dict[str, np.ndarray]):
         self.data = osmo_data
         #
         self._ei_max = self._calculate_ei_max_value()
@@ -52,7 +52,7 @@ class OsmoModel:
     def _get_data_column(self, column: str) -> np.array:
         value = self.data.get(column)
         if value is not None:
-            return np.array(value)
+            return value
         else:
             raise KeyError(f"The column '{column}' does not exist.")
 
