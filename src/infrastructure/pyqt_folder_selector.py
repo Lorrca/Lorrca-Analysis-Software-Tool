@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog
 from src.core.interfaces.folder_selector import FolderSelector
 
 
