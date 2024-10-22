@@ -7,12 +7,31 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc8b0266-9060-4b50-8922-d9601ce00511" name="Changes" comment="adjusted polynomial fit for the valley">
-      <change afterPath="$PROJECT_DIR$/src/setup.py" afterDir="false" />
+    <list default="true" id="dc8b0266-9060-4b50-8922-d9601ce00511" name="Changes" comment="different path">
+      <change afterPath="$PROJECT_DIR$/src/analysis/osmo_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/utils/osmo_visualization.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/controllers/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/folder_selection_presenter.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/interfaces/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/analysis/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/interfaces/analysis_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/controllers/osmo_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/interfaces/folder_selector.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/interfaces/plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/models/osmo_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/models/osmo_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tests/test_osmo_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tests/test_osmo_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/usecases/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/usecases/display_results_usecase.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/usecases/folder_selection_usecase.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/usecases/run_analysis_usecase.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/osmo_data_loader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/analysis_service_impl.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/plugin_manager.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/pyqt_display_results.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/pyqt_folder_selector.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plugins/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/plugins/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plugins/custom_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/plugins/custom_plugin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,10 +48,11 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="feature/LOR-1784-osmoscan-model" />
+        <entry key="$PROJECT_DIR$" value="feature/LOR-1785-separate-app.py-logic-into-separate-modules" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -48,44 +68,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Python tests.Python tests in test_osmo_model.py.executor": "Run",
-    "Python tests.pytest for test_osmo_model.TestOsmoModel.test_get_ei_max.executor": "Run",
-    "Python.app.executor": "Run",
-    "Python.load_main_window (1).executor": "Run",
-    "Python.load_main_window.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.main_window.executor": "Run",
-    "Python.osmo_model.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
-    "git-widget-placeholder": "feature/LOR-1787-update-unit-tests-to-reflect-osmoscan-model-changes",
-    "last_opened_file_path": "C:/Users/andrii.kernytskyi/Documents",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "advanced.settings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Python tests.Python tests in test_osmo_model.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest for test_osmo_model.TestOsmoModel.test_get_ei_max.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.load_main_window (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.load_main_window.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main_window.executor&quot;: &quot;Run&quot;,
+    &quot;Python.osmo_model.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SONARLINT_PRECOMMIT_ANALYSIS&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/LOR-1790-osmomodel-modularization&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/andrii.kernytskyi/Documents&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\ui\icons" />
       <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\assets\icons" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\utils" />
+      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\core" />
+      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\interfaces" />
+      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src" />
       <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\ui\views" />
-      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\ui" />
-      <recent name="C:\Users\andrii.kernytskyi\PycharmProjects\lorrcaanalysissoftwaretool\src\ui\icons" />
-      <recent name="C:\Users\andrii.kernytskyi\Downloads\cleanTest\cleanTest" />
-      <recent name="C:\Users\andrii.kernytskyi\Downloads\cleanTest\cleanTest\src\requirements" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.app">
+  <component name="RunManager" selected="Python.main">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="LorrcaAnalysisSoftwareTool" />
       <option name="ENV_FILES" value="" />
@@ -130,7 +150,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="load_main_window (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="lorrcaanalysissoftwaretool" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -139,11 +159,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/ui/views" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/ui/views/load_main_window.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -288,18 +308,18 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.main" />
         <item itemvalue="Python.app" />
         <item itemvalue="Python tests.Python tests in test_osmo_model.py" />
         <item itemvalue="Python tests.pytest for test_osmo_model.TestOsmoModel.test_get_ei_max" />
         <item itemvalue="Python.osmo_model" />
-        <item itemvalue="Python.load_main_window (1)" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-884f5ed5d46b-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.22855.92" />
+        <option value="bundled-python-sdk-0e3be3396995-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23339.19" />
       </set>
     </attachedChunks>
   </component>
@@ -377,7 +397,55 @@
       <option name="project" value="LOCAL" />
       <updated>1728644287155</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="constants instead of magic numbers&#10;enums instead of strings&#10;duplicate data was to moved to common setup.py file">
+      <option name="closed" value="true" />
+      <created>1728653624496</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1728653624496</updated>
+    </task>
+    <task id="LOCAL-00010" summary="fixed module import">
+      <option name="closed" value="true" />
+      <created>1728907499175</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1728907499175</updated>
+    </task>
+    <task id="LOCAL-00011" summary="coverage report path">
+      <option name="closed" value="true" />
+      <created>1728913646525</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1728913646525</updated>
+    </task>
+    <task id="LOCAL-00012" summary="test reports path">
+      <option name="closed" value="true" />
+      <created>1728914379815</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1728914379815</updated>
+    </task>
+    <task id="LOCAL-00013" summary="test reports path">
+      <option name="closed" value="true" />
+      <created>1728917919415</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1728917919415</updated>
+    </task>
+    <task id="LOCAL-00014" summary="different path">
+      <option name="closed" value="true" />
+      <created>1728918193636</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1728918193636</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -391,7 +459,12 @@
     <MESSAGE value="model update + requirements.txt" />
     <MESSAGE value="adjusted testing for osmo_model.py&#10;cleaned app.py" />
     <MESSAGE value="adjusted polynomial fit for the valley" />
-    <option name="LAST_COMMIT_MESSAGE" value="adjusted polynomial fit for the valley" />
+    <MESSAGE value="constants instead of magic numbers&#10;enums instead of strings&#10;duplicate data was to moved to common setup.py file" />
+    <MESSAGE value="fixed module import" />
+    <MESSAGE value="coverage report path" />
+    <MESSAGE value="test reports path" />
+    <MESSAGE value="different path" />
+    <option name="LAST_COMMIT_MESSAGE" value="different path" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/cleanTest$main_window.coverage" NAME="main_window Coverage Results" MODIFIED="1727216722462" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/ui" />
