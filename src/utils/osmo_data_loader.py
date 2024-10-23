@@ -42,23 +42,25 @@ class OsmoDataLoader:
                 break
         return headers, start_reading
 
-    def _extract_metadata(self, row):
+    def _extract_metadata(self, row) -> bool:
         if not row:
             return False
 
-        if "Upper limit area (mOsm/kg" in row[0] and len(row) > 1:
+        if "Upper limit area" in row[0] and len(row) > 1:
             self.metadata["upper_limit"] = int(row[1])
-        elif "Date (Y-M-D)" in row[0] and len(row) > 1:
+        if "Lower limit area" in row[0] and len(row) > 1:
+            self.metadata["lower_limit"] = int(row[1])
+        if "Date (Y-M-D)" in row[0] and len(row) > 1:
             self.metadata["date"] = row[1].strip()  # Store date value
-        elif "Instrument info" in row[0] and len(row) > 1:
+        if "Instrument info" in row[0] and len(row) > 1:
             self.metadata["instrument_info"] = row[
                 1].strip()  # Store instrument info
-        elif "Measurement ID" in row[0] and len(row) > 1:
+        if "Measurement ID" in row[0] and len(row) > 1:
             self.metadata["measurement_id"] = row[1].strip()
             return True
         return False
 
-    def _read_data(self, csv_reader, headers):
+    def _read_data(self, csv_reader, headers) -> dict:
         data = {key: [] for key in headers}  # Initialize the dictionary
         for row in csv_reader:
             # Process data rows (skip the first column in each row)
@@ -68,7 +70,8 @@ class OsmoDataLoader:
                 self._process_row(headers, values, data)
         return data
 
-    def _process_row(self, headers, values, data):
+    @staticmethod
+    def _process_row(headers, values, data):
         for key, value in zip(headers, values):
             # Convert values to float, handling commas as decimal points
             try:
@@ -77,7 +80,8 @@ class OsmoDataLoader:
             except ValueError:
                 data[key].append(value)  # Keep non-numeric values as they are
 
-    def _convert_to_numpy(self, data):
+    @staticmethod
+    def _convert_to_numpy(data) -> list:
         # Convert lists to NumPy arrays
         for key in data:
             data[key] = np.array(data[key])
