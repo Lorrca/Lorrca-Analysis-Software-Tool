@@ -94,12 +94,11 @@ class OsmoModel:
                 f"Column '{column}' not found in data.")
         return value
 
-    # Calculates the highest Elongation INdex value
+    # Calculates the highest Elongation Index value
     def _calculate_ei_max_value(self) -> float:
         """Calculate the maximum EI value."""
         return float(np.max(self.ei))
 
-    # Calculates
     def _calculate_ei_hyper_value(self) -> float:
         """Calculate EI hyper, which is half of EI max."""
         return self._ei_max / 2
@@ -177,7 +176,7 @@ class OsmoModel:
         return int(start_idx + center_idx) + offset
 
     def _calculate_area(self) -> (float, np.ndarray, np.ndarray):
-        """Calculates area between lower & upper limits set by Lorrca"""
+        """Calculate area between lower & upper limits set by Lorrca"""
 
         # Find indices for Omin and Upper limit
         lower_idx = np.nonzero(self._o >= self._lower_limit)[0]
