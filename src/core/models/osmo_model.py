@@ -37,56 +37,52 @@ class OsmoModel:
         self._area = self._calculate_area()
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self._measurement_id
 
     @property
-    def date(self):
+    def date(self) -> str:
         return self._date
 
     @property
-    def info(self):
+    def info(self) -> str:
         return self._instrument_info
 
     @property
-    def ei(self):
+    def ei(self) -> np.ndarray:
         return self._ei
 
     @property
-    def o(self):
+    def o(self) -> np.ndarray:
         return self._o
 
     @property
-    def ei_max(self):
+    def ei_max(self) -> float:
         return self._ei_max
 
     @property
-    def o_max(self):
+    def o_max(self) -> float:
         return self._o[self._o_max_idx]
 
     @property
-    def ei_hyper(self):
+    def ei_hyper(self) -> float:
         return self._ei_hyper
 
     @property
-    def o_hyper(self):
+    def o_hyper(self) -> float:
         return self._o_hyper
 
     @property
-    def first_peak(self):
-        if self._first_peak_idx is not None:
-            return self._o[self._first_peak_idx], self._ei[
-                self._first_peak_idx]
-        return None
+    def first_peak(self) -> tuple:
+        return self._o[self._first_peak_idx], self._ei[
+            self._first_peak_idx]
 
     @property
-    def min(self):
-        if self._valley_idx is not None:
-            return self._o[self._valley_idx], self._ei[self._valley_idx]
-        return None
+    def min(self) -> tuple:
+        return self._o[self._valley_idx], self._ei[self._valley_idx]
 
     @property
-    def area(self):
+    def area(self) -> (float, np.ndarray, np.ndarray):
         return self._area
 
     # Returns a data column based on key value
@@ -180,7 +176,7 @@ class OsmoModel:
 
         return int(start_idx + center_idx) + offset
 
-    def _calculate_area(self):
+    def _calculate_area(self) -> (float, np.ndarray, np.ndarray):
         """Calculates area between lower & upper limits set by Lorrca"""
 
         # Find indices for Omin and Upper limit
@@ -190,7 +186,7 @@ class OsmoModel:
         if upper_idx.size == 0:
             raise ValueError("Upper limit exceeds available O. values.")
         if lower_idx.size == 0:
-            raise ValueError("Upper limit exceeds available O. values.")
+            raise ValueError("Lower limit exceeds available O. values.")
 
         # Get the last index where O. is less than or equal to the upper_limit
         upper_idx = upper_idx[-1]

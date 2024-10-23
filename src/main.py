@@ -1,5 +1,3 @@
-import sys
-
 from src.core.controllers.osmo_controller import OsmoController
 from src.utils.osmo_data_loader import OsmoDataLoader
 
