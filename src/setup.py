@@ -162,4 +162,4 @@ day_28 = {
 
 
 def load_data() -> dict[str, np.ndarray]:
-    return day_28
+    return day_56

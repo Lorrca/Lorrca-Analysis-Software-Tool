@@ -57,7 +57,7 @@ class OsmoModel:
         return None
 
     @property
-    def valley(self):
+    def min(self):
         if self._valley_idx is not None:
             return self._o[self._valley_idx], self._ei[self._valley_idx]
         return None

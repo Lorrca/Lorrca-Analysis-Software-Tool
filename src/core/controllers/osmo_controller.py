@@ -21,13 +21,13 @@ class OsmoController:
             raise ValueError("Model is not initialized. Please load data first.")
 
         self.results['first_peak'] = self.model.first_peak
-        self.results['o_min'] = self.model.valley[0]
-        self.results['ei_min'] = self.model.valley[1]
+        self.results['o_min'] = self.model.min[0]
+        self.results['ei_min'] = self.model.min[1]
         self.results['o_max'] = self.model.o_max
         self.results['ei_max'] = self.model.ei_max
         self.results['o_hyper'] = self.model.o_hyper
         self.results['ei_hyper'] = self.model.ei_hyper
-        self.results['valley'] = self.model.valley
+        self.results['valley'] = self.model.min
 
     def visualize_results(self):
         """Visualize the results using OsmoVisualizer."""

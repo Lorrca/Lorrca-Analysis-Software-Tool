@@ -7,31 +7,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc8b0266-9060-4b50-8922-d9601ce00511" name="Changes" comment="different path">
-      <change afterPath="$PROJECT_DIR$/src/analysis/osmo_analyzer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/osmo_visualization.py" afterDir="false" />
+    <list default="true" id="dc8b0266-9060-4b50-8922-d9601ce00511" name="Changes" comment="updated osmo model + separation of responsibilities">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/controllers/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/folder_selection_presenter.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/interfaces/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/analysis/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/interfaces/analysis_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/controllers/osmo_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/interfaces/folder_selector.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/interfaces/plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/controllers/osmo_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/controllers/osmo_controller.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/models/osmo_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/models/osmo_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/usecases/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/usecases/display_results_usecase.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/usecases/folder_selection_usecase.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core/usecases/run_analysis_usecase.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/osmo_data_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/analysis_service_impl.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/plugin_manager.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/pyqt_display_results.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/pyqt_folder_selector.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plugins/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/plugins/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plugins/custom_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/plugins/custom_plugin.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tests/test_osmo_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tests/test_osmo_model.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -309,8 +291,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.app" />
         <item itemvalue="Python tests.Python tests in test_osmo_model.py" />
+        <item itemvalue="Python.app" />
         <item itemvalue="Python tests.pytest for test_osmo_model.TestOsmoModel.test_get_ei_max" />
         <item itemvalue="Python.osmo_model" />
       </list>
@@ -445,7 +427,15 @@
       <option name="project" value="LOCAL" />
       <updated>1728918193636</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="updated osmo model + separation of responsibilities">
+      <option name="closed" value="true" />
+      <created>1729640756896</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1729640756896</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -464,7 +454,8 @@
     <MESSAGE value="coverage report path" />
     <MESSAGE value="test reports path" />
     <MESSAGE value="different path" />
-    <option name="LAST_COMMIT_MESSAGE" value="different path" />
+    <MESSAGE value="updated osmo model + separation of responsibilities" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated osmo model + separation of responsibilities" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/cleanTest$main_window.coverage" NAME="main_window Coverage Results" MODIFIED="1727216722462" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/ui" />
