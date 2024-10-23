@@ -20,11 +20,11 @@ class OsmoModel:
         self.data = osmo_data
 
         # Set metadata
-        self._measurement_id = osmo_metadata['measurement_id']
-        self._date = osmo_metadata['date']
-        self._instrument_info = osmo_metadata['instrument_info']
-        self._upper_limit = osmo_metadata['upper_limit']
-        self._lower_limit = osmo_metadata['lower_limit']
+        self._measurement_id = osmo_metadata.get('measurement_id')
+        self._date = osmo_metadata.get('date')
+        self._instrument_info = osmo_metadata.get('instrument_info')
+        self._upper_limit = osmo_metadata.get('upper_limit')
+        self._lower_limit = osmo_metadata.get('lower_limit')
 
         self._ei = self._get_data_column(self.EI_KEY)
         self._o = self._get_data_column(self.O_KEY)
