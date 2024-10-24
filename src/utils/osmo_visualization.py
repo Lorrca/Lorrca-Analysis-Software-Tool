@@ -23,10 +23,8 @@ class OsmoVisualizer:
 
         # Plot EI / O. min
 
-        o_min = self.model.min[0]
-        ei_min = self.model.min[1]
-        ax.plot(o_min, ei_min, 'o',
-                label=f'EI min ({round(o_min)}, {round(ei_min, 3)})',
+        ax.plot(self.model.o_min, self.model.ei_min, 'o',
+                label=f'EI min ({round(self.model.o_min)}, {round(self.model.ei_min, 3)})',
                 markersize=3)
 
         # Plot EI / O. max

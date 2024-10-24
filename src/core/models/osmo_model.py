@@ -58,9 +58,9 @@ class OsmoModel:
         self._first_peak_idx: Optional[int] = None
         self._o_first_peak: Optional[float] = None
         self._ei_first_peak: Optional[float] = None
-        self._valley_idx: Optional[int] = None
-        self._o_valley: Optional[float] = None
-        self._ei_valley: Optional[float] = None
+        self._min_idx: Optional[int] = None
+        self._o_min: Optional[float] = None
+        self._ei_min: Optional[float] = None
         self._area: Optional[float, np.ndarray, np.ndarray] = None
 
     @property
@@ -99,11 +99,11 @@ class OsmoModel:
     @property
     def o_max(self) -> float:
         if self._o_max is None:
-            self._o_max = self._o[self.o_max_idx]
+            self._o_max = self._o[self.max_idx]
         return self._o_max
 
     @property
-    def o_max_idx(self) -> int:
+    def max_idx(self) -> int:
         if self._o_max_idx is None:
             self._o_max_idx = self._get_o_idx_at_ei_max(self._ei, self.ei_max)
         return self._o_max_idx
@@ -111,14 +111,14 @@ class OsmoModel:
     @property
     def o_hyper(self) -> float:
         if self._o_hyper is None:
-            self._o_hyper = self._calculate_o_hyper(self._o, self._ei, self.o_max_idx,
+            self._o_hyper = self._calculate_o_hyper(self._o, self._ei, self.max_idx,
                                                     self.ei_hyper)
         return self._o_hyper
 
     @property
     def first_peak_idx(self):
         if self._first_peak_idx is None:
-            self._first_peak_idx = self._find_prominent_peak(self._ei, self.o_max_idx)
+            self._first_peak_idx = self._find_prominent_peak(self._ei, self.max_idx)
         return self._first_peak_idx
 
     @property
@@ -134,11 +134,23 @@ class OsmoModel:
         return self._ei_first_peak
 
     @property
-    def min(self):
-        if self._valley_idx is None:
-            self._valley_idx = self._find_prominent_valley(self._ei, self.first_peak_idx,
-                                                           self.o_max_idx)
-        return float(self._o[self._valley_idx]), float(self._ei[self._valley_idx])
+    def min_idx(self) -> int:
+        if self._min_idx is None:
+            self._min_idx = self._find_prominent_valley(self._ei, self.first_peak_idx,
+                                                        self.max_idx)
+        return self._min_idx
+
+    @property
+    def o_min(self) -> float:
+        if self._o_min is None:
+            self._o_min = self._o[self.min_idx]
+        return self._o_min
+
+    @property
+    def ei_min(self) -> float:
+        if self._ei_min is None:
+            self._ei_min = self._ei[self.min_idx]
+        return self._ei_min
 
     @property
     def area(self) -> (float, np.ndarray, np.ndarray):
