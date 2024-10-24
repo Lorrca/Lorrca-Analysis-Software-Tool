@@ -15,6 +15,11 @@ class InsufficientDataError(ValueError):
     pass
 
 
+class MissingDataError(ValueError):
+    """Exception raised when required data for a calculation is missing or incomplete."""
+    pass
+
+
 class OsmoModel:
     """Model for processing and analyzing osmo data."""
     # Key values for data columns
@@ -35,7 +40,7 @@ class OsmoModel:
         if not isinstance(osmo_metadata, dict):
             raise TypeError("osmo_metadata must be a dictionary.")
         if not osmo_data or not all(isinstance(arr, np.ndarray) for arr in osmo_data.values()):
-            raise ValueError("osmo_data must contain non-empty numpy arrays.")
+            raise MissingDataError("osmo_data must contain non-empty numpy arrays.")
 
         self.data = osmo_data
 
@@ -153,7 +158,7 @@ class OsmoModel:
         return self._ei_min
 
     @property
-    def area(self) -> (float, np.ndarray, np.ndarray):
+    def area(self) -> tuple[float, np.ndarray, np.ndarray]:
         if self._area is None:
             self._area = self._calculate_area(self._o, self._ei, self._lower_limit,
                                               self._upper_limit)
@@ -216,9 +221,9 @@ class OsmoModel:
         return None
 
     @staticmethod
-    def _interpolate_two_points(ei_hyper, x1, y1, x2, y2) -> float:
+    def _interpolate_two_points(value, x1, y1, x2, y2) -> float:
         """Linear interpolation between two points."""
-        return y1 + (y2 - y1) * (ei_hyper - x1) / (x2 - x1)
+        return y1 + (y2 - y1) * (value - x1) / (x2 - x1)
 
     @staticmethod
     def _find_prominent_point(data, find_func, offset=0) -> int:
