@@ -1,22 +1,42 @@
+from typing import Optional
+
 import numpy as np
 from scipy.signal import find_peaks
 from scipy import integrate
 
 
 class DataColumnNotFoundError(KeyError):
+    """Exception raised when a requested data column is not found."""
     pass
 
 
 class InsufficientDataError(ValueError):
+    """Exception raised when there is insufficient data for a calculation."""
     pass
 
 
 class OsmoModel:
+    """Model for processing and analyzing osmo data."""
     # Key values for data columns
     EI_KEY = 'EI'
     O_KEY = 'O.'
 
     def __init__(self, osmo_data: dict[str, np.ndarray], osmo_metadata: dict):
+        """
+        Initialize the OsmoModel with provided data and metadata.
+
+        Parameters:
+        - osmo_data: A dictionary containing measurement data arrays.
+        - osmo_metadata: A dictionary containing metadata for the measurements.
+        """
+        # Additional validation for input types
+        if not isinstance(osmo_data, dict):
+            raise TypeError("osmo_data must be a dictionary.")
+        if not isinstance(osmo_metadata, dict):
+            raise TypeError("osmo_metadata must be a dictionary.")
+        if not osmo_data or not all(isinstance(arr, np.ndarray) for arr in osmo_data.values()):
+            raise ValueError("osmo_data must contain non-empty numpy arrays.")
+
         self.data = osmo_data
 
         # Set metadata
@@ -26,15 +46,22 @@ class OsmoModel:
         self._upper_limit = osmo_metadata.get('upper_limit')
         self._lower_limit = osmo_metadata.get('lower_limit')
 
-        self._ei = self._get_data_column(self.EI_KEY)
-        self._o = self._get_data_column(self.O_KEY)
-        self._ei_max = self._calculate_ei_max_value()
-        self._ei_hyper = self._calculate_ei_hyper_value()
-        self._o_max, self._o_max_idx = self._get_o_max_value_and_idx()
-        self._o_hyper = self._calculate_o_hyper()
-        self._first_peak_idx = self._find_prominent_peak()
-        self._valley_idx = self._find_prominent_valley()
-        self._area = self._calculate_area()
+        self._ei = self._get_data_column(self.data, self.EI_KEY)
+        self._o = self._get_data_column(self.data, self.O_KEY)
+
+        # Initialize calculated attributes to None
+        self._ei_max: Optional[float] = None
+        self._ei_hyper: Optional[float] = None
+        self._o_max: Optional[float] = None
+        self._o_max_idx: Optional[int] = None
+        self._o_hyper: Optional[float] = None
+        self._first_peak_idx: Optional[int] = None
+        self._o_first_peak: Optional[float] = None
+        self._ei_first_peak: Optional[float] = None
+        self._valley_idx: Optional[int] = None
+        self._o_valley: Optional[float] = None
+        self._ei_valley: Optional[float] = None
+        self._area: Optional[float, np.ndarray, np.ndarray] = None
 
     @property
     def id(self) -> str:
@@ -58,94 +85,128 @@ class OsmoModel:
 
     @property
     def ei_max(self) -> float:
+        """Lazy calculation of ei_max, stored in a field after the first call."""
+        if self._ei_max is None:
+            self._ei_max = self._calculate_ei_max_value(self._ei)
         return self._ei_max
 
     @property
-    def o_max(self) -> float:
-        return self._o[self._o_max_idx]
-
-    @property
     def ei_hyper(self) -> float:
+        if self._ei_hyper is None:
+            self._ei_hyper = self._calculate_ei_hyper_value(self.ei_max)
         return self._ei_hyper
 
     @property
+    def o_max(self) -> float:
+        if self._o_max is None:
+            self._o_max = self._o[self.o_max_idx]
+        return self._o_max
+
+    @property
+    def o_max_idx(self) -> int:
+        if self._o_max_idx is None:
+            self._o_max_idx = self._get_o_idx_at_ei_max(self._ei, self.ei_max)
+        return self._o_max_idx
+
+    @property
     def o_hyper(self) -> float:
+        if self._o_hyper is None:
+            self._o_hyper = self._calculate_o_hyper(self._o, self._ei, self.o_max_idx,
+                                                    self.ei_hyper)
         return self._o_hyper
 
     @property
-    def first_peak(self) -> tuple:
-        return self._o[self._first_peak_idx], self._ei[
-            self._first_peak_idx]
+    def first_peak_idx(self):
+        if self._first_peak_idx is None:
+            self._first_peak_idx = self._find_prominent_peak(self._ei, self.o_max_idx)
+        return self._first_peak_idx
 
     @property
-    def min(self) -> tuple:
-        return self._o[self._valley_idx], self._ei[self._valley_idx]
+    def o_first_peak(self):
+        if self._o_first_peak is None:
+            self._o_first_peak = self._o[self.first_peak_idx]
+        return self._o_first_peak
+
+    @property
+    def ei_first_peak(self):
+        if self._ei_first_peak is None:
+            self._ei_first_peak = self._ei[self.first_peak_idx]
+        return self._ei_first_peak
+
+    @property
+    def min(self):
+        if self._valley_idx is None:
+            self._valley_idx = self._find_prominent_valley(self._ei, self.first_peak_idx,
+                                                           self.o_max_idx)
+        return float(self._o[self._valley_idx]), float(self._ei[self._valley_idx])
 
     @property
     def area(self) -> (float, np.ndarray, np.ndarray):
+        if self._area is None:
+            self._area = self._calculate_area(self._o, self._ei, self._lower_limit,
+                                              self._upper_limit)
         return self._area
 
     # Returns a data column based on key value
-    def _get_data_column(self, column: str) -> np.ndarray:
+    @staticmethod
+    def _get_data_column(data: dict[str, np.ndarray], column: str) -> np.ndarray:
         """Retrieve a data column by key."""
-        value = self.data.get(column)
+        value = data.get(column)
         if value is None:
-            raise DataColumnNotFoundError(
-                f"Column '{column}' not found in data.")
+            raise DataColumnNotFoundError(f"Column '{column}' not found in data.")
         return value
 
     # Calculates the highest Elongation Index value
-    def _calculate_ei_max_value(self) -> float:
+    @staticmethod
+    def _calculate_ei_max_value(ei_data: np.ndarray) -> float:
         """Calculate the maximum EI value."""
-        return float(np.max(self.ei))
+        if ei_data.size == 0:
+            raise InsufficientDataError("EI data is insufficient to calculate max EI value.")
+        return float(np.max(ei_data))
 
-    def _calculate_ei_hyper_value(self) -> float:
+    @staticmethod
+    def _calculate_ei_hyper_value(ei_max: float) -> float:
         """Calculate EI hyper, which is half of EI max."""
-        return self._ei_max / 2
+        if ei_max is None:
+            raise ValueError("EI maximum is None. Call _calculate_ei_max_value() first.")
+        return ei_max / 2
 
-    def _get_o_max_value_and_idx(self) -> (float, int):
+    @staticmethod
+    def _get_o_idx_at_ei_max(ei_data: np.ndarray, ei_max: float) -> int:
         """Find the O max value and its corresponding index."""
-        indices = np.nonzero(self.ei == self._ei_max)[0]
+        indices = np.nonzero(ei_data == ei_max)[0]
         if len(indices) == 0:
             raise InsufficientDataError("EI max not found in the EI array.")
         center_idx = indices[len(indices) // 2]
-        return float(self.o[center_idx]), center_idx
+        return int(center_idx)
 
-    def _calculate_o_hyper(self) -> float | None:
+    @staticmethod
+    def _calculate_o_hyper(o_data: np.ndarray, ei_data: np.ndarray, o_max_idx: int,
+                           ei_hyper: float) -> float | None:
         """Interpolate and calculate O hyper based on EI hyper."""
-        relevant_ei = self.ei[self._o_max_idx:]
-        relevant_o = self.o[self._o_max_idx:]
+        relevant_o = o_data[o_max_idx:]
+        relevant_ei = ei_data[o_max_idx:]
 
         if len(relevant_ei) < 2:
-            raise InsufficientDataError(
-                "Not enough data points to perform interpolation.")
+            raise InsufficientDataError("Not enough data points to perform interpolation.")
 
         for i, ei_value in enumerate(relevant_ei):
             # Check if ei_value is a tuple
             if isinstance(ei_value, tuple):
                 ei_value = ei_value[0]
 
-            if ei_value == self._ei_hyper:
+            if ei_value == ei_hyper:
                 return float(relevant_o[i])
-            elif ei_value < self._ei_hyper:
-                return self._interpolate(relevant_ei[i - 1], relevant_o[i - 1],
-                                         relevant_ei[i], relevant_o[i])
+            elif ei_value < ei_hyper:
+                return OsmoModel._interpolate_two_points(ei_hyper, relevant_ei[i - 1],
+                                                         relevant_o[i - 1], relevant_ei[i],
+                                                         relevant_o[i])
         return None
 
-    def _interpolate(self, x1, y1, x2, y2) -> float:
+    @staticmethod
+    def _interpolate_two_points(ei_hyper, x1, y1, x2, y2) -> float:
         """Linear interpolation between two points."""
-        return y1 + (y2 - y1) * (self._ei_hyper - x1) / (x2 - x1)
-
-    def _find_prominent_peak(self) -> int:
-        """Find the peak with the highest prominence before O max."""
-        return self._find_prominent_point(self.ei[:self._o_max_idx],
-                                          find_peaks)
-
-    def _find_prominent_valley(self) -> int:
-        """Find the valley with the highest prominence after the first peak."""
-        filtered_ei = self.ei[self._first_peak_idx:self._o_max_idx]
-        return self._find_prominent_point(-filtered_ei, find_peaks,
-                                          self._first_peak_idx)
+        return y1 + (y2 - y1) * (ei_hyper - x1) / (x2 - x1)
 
     @staticmethod
     def _find_prominent_point(data, find_func, offset=0) -> int:
@@ -175,12 +236,29 @@ class OsmoModel:
 
         return int(start_idx + center_idx) + offset
 
-    def _calculate_area(self) -> (float, np.ndarray, np.ndarray):
+    @staticmethod
+    def _find_prominent_peak(ei_data: np.ndarray, o_max_idx: int) -> int:
+        """Find the peak with the highest prominence before O max."""
+        return OsmoModel._find_prominent_point(ei_data[:o_max_idx], find_peaks)
+
+    @staticmethod
+    def _find_prominent_valley(ei_data: np.ndarray, first_peak_idx: int, o_max_idx: int) -> int:
+        """Find the valley with the highest prominence after the first peak."""
+        filtered_ei = ei_data[first_peak_idx:o_max_idx]
+        return OsmoModel._find_prominent_point(-filtered_ei, find_peaks, first_peak_idx)
+
+    @staticmethod
+    def _calculate_area(o_data: np.ndarray, ei_data, lower_limit: int, upper_limit: int) -> (
+            float, np.ndarray, np.ndarray):
         """Calculate area between lower & upper limits set by Lorrca"""
 
+        # Validate limits
+        if upper_limit > max(o_data) or lower_limit < min(o_data):
+            raise ValueError("Invalid limits for area calculation.")
+
         # Find indices for Omin and Upper limit
-        lower_idx = np.nonzero(self._o >= self._lower_limit)[0]
-        upper_idx = np.nonzero(self._o <= self._upper_limit)[0]
+        lower_idx = np.nonzero(o_data >= lower_limit)[0]
+        upper_idx = np.nonzero(o_data <= upper_limit)[0]
 
         if upper_idx.size == 0:
             raise ValueError("Upper limit exceeds available O. values.")
@@ -193,12 +271,12 @@ class OsmoModel:
         lower_idx = lower_idx[0]
 
         # Slice the data for the integration
-        o_segment = self._o[lower_idx:upper_idx + 1]
-        ei_segment = self._ei[lower_idx:upper_idx + 1]
+        o_segment = o_data[lower_idx:upper_idx + 1]
+        ei_segment = ei_data[lower_idx:upper_idx + 1]
 
         # Check if the segments are valid for integration
         if len(o_segment) < 2 or len(ei_segment) < 2:
-            raise ValueError("Not enough data points for area calculation.")
+            raise InsufficientDataError("Not enough data points for area calculation.")
 
         # Calculate the area using Simpson's rule
         area = integrate.simpson(y=ei_segment, x=o_segment)
