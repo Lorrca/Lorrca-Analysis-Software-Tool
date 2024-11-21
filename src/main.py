@@ -1,18 +1,20 @@
-from src.core.controllers.osmo_controller import OsmoController
-from src.utils.osmo_data_loader import OsmoDataLoader
+import sys
+
+from PySide6.QtWidgets import QApplication
+
+from src.controllers.main_controller import MainController
+from src.ui.main_ui import MainWindow
 
 
 def main():
-    # Initialize DataLoader and OsmoController
-    data_loader = OsmoDataLoader(
-        r"C:\Users\andrii.kernytskyi\Downloads\Archive 2\data_dir\OSMO1-AGIOS-002-SS-Day56_2023-09-19_0.CSV")
-    controller = OsmoController(data_loader)
+    app = QApplication(sys.argv)
 
-    # Load data
-    controller.load_data()
+    # Initialize the Main View and Controller
+    controller = MainController()
+    window = MainWindow(controller)
 
-    # Visualize results
-    controller.visualize_results()
+    window.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

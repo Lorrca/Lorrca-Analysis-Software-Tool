@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from scipy.signal import find_peaks
 from scipy import integrate
@@ -34,39 +32,54 @@ class OsmoModel:
         - osmo_data: A dictionary containing measurement data arrays.
         - osmo_metadata: A dictionary containing metadata for the measurements.
         """
-        # Additional validation for input types
-        if not isinstance(osmo_data, dict):
-            raise TypeError("osmo_data must be a dictionary.")
-        if not isinstance(osmo_metadata, dict):
-            raise TypeError("osmo_metadata must be a dictionary.")
-        if not osmo_data or not all(isinstance(arr, np.ndarray) for arr in osmo_data.values()):
-            raise MissingDataError("osmo_data must contain non-empty numpy arrays.")
+        self.error_message = None
+        self._valid = True
 
-        self.data = osmo_data
+        try:
+            # Validate input types
+            if not isinstance(osmo_data, dict):
+                raise TypeError("osmo_data must be a dictionary.")
+            if not isinstance(osmo_metadata, dict):
+                raise TypeError("osmo_metadata must be a dictionary.")
 
-        # Set metadata
-        self._measurement_id = osmo_metadata.get('measurement_id')
-        self._date = osmo_metadata.get('date')
-        self._instrument_info = osmo_metadata.get('instrument_info')
-        self._upper_limit = osmo_metadata.get('upper_limit')
-        self._lower_limit = osmo_metadata.get('lower_limit')
+            # Validate osmo_data contents
+            if not osmo_data or not all(
+                    isinstance(arr, np.ndarray) and arr.size > 0 for arr in osmo_data.values()):
+                raise MissingDataError("osmo_data must contain non-empty numpy arrays.")
 
-        self._ei = self._get_data_column(self.data, self.EI_KEY)
-        self._o = self._get_data_column(self.data, self.O_KEY)
+            self.data = osmo_data
+            self._measurement_id = osmo_metadata.get('measurement_id')
+            self._date = osmo_metadata.get('date')
+            self._instrument_info = osmo_metadata.get('instrument_info')
+            self._upper_limit = osmo_metadata.get('upper_limit')
+            self._lower_limit = osmo_metadata.get('lower_limit')
 
-        # Initialize calculated attributes to None
-        self._ei_max: Optional[float] = None
-        self._ei_hyper: Optional[float] = None
-        self._o_max: Optional[float] = None
-        self._o_max_idx: Optional[int] = None
-        self._o_hyper: Optional[float] = None
-        self._first_peak_idx: Optional[int] = None
-        self._o_first_peak: Optional[float] = None
-        self._ei_first_peak: Optional[float] = None
-        self._min_idx: Optional[int] = None
-        self._o_min: Optional[float] = None
-        self._ei_min: Optional[float] = None
-        self._area: Optional[float, np.ndarray, np.ndarray] = None
+            # Validate and retrieve required columns
+            self._ei = self._get_data_column(self.data, self.EI_KEY)
+            self._o = self._get_data_column(self.data, self.O_KEY)
+
+            # Initialize calculated attributes
+            self._ei_max = None
+            self._ei_hyper = None
+            self._o_max = None
+            self._o_max_idx = None
+            self._o_hyper = None
+            self._first_peak_idx = None
+            self._o_first_peak = None
+            self._ei_first_peak = None
+            self._min_idx = None
+            self._o_min = None
+            self._ei_min = None
+            self._area = None
+
+        except (TypeError, DataColumnNotFoundError, ValueError) as e:
+            self.error_message = str(e)
+            self._valid = False
+
+    @property
+    def is_valid(self) -> bool:
+        """Indicates whether the model is in a valid state."""
+        return self._valid
 
     @property
     def id(self) -> str:
@@ -77,88 +90,96 @@ class OsmoModel:
         return self._date
 
     @property
+    def lower_limit(self) -> int:
+        return self._lower_limit
+
+    @property
+    def upper_limit(self) -> int:
+        return self._upper_limit
+
+    @property
     def info(self) -> str:
         return self._instrument_info
 
     @property
-    def ei(self) -> np.ndarray:
+    def get_ei(self) -> np.ndarray:
         return self._ei
 
     @property
-    def o(self) -> np.ndarray:
+    def get_o(self) -> np.ndarray:
         return self._o
 
     @property
-    def ei_max(self) -> float:
+    def get_ei_max(self) -> float:
         """Lazy calculation of ei_max, stored in a field after the first call."""
         if self._ei_max is None:
             self._ei_max = self._calculate_ei_max_value(self._ei)
         return self._ei_max
 
     @property
-    def ei_hyper(self) -> float:
+    def get_ei_hyper(self) -> float:
         if self._ei_hyper is None:
-            self._ei_hyper = self._calculate_ei_hyper_value(self.ei_max)
+            self._ei_hyper = self._calculate_ei_hyper_value(self.get_ei_max)
         return self._ei_hyper
 
     @property
-    def o_max(self) -> float:
+    def get_o_max(self) -> float:
         if self._o_max is None:
-            self._o_max = self._o[self.max_idx]
+            self._o_max = self._o[self.get_max_idx]
         return self._o_max
 
     @property
-    def max_idx(self) -> int:
+    def get_max_idx(self) -> int:
         if self._o_max_idx is None:
-            self._o_max_idx = self._get_o_idx_at_ei_max(self._ei, self.ei_max)
+            self._o_max_idx = self._get_o_idx_at_ei_max(self._ei, self.get_ei_max)
         return self._o_max_idx
 
     @property
-    def o_hyper(self) -> float:
+    def get_o_hyper(self) -> float:
         if self._o_hyper is None:
-            self._o_hyper = self._calculate_o_hyper(self._o, self._ei, self.max_idx,
-                                                    self.ei_hyper)
+            self._o_hyper = self._calculate_o_hyper(self._o, self._ei, self.get_max_idx,
+                                                    self.get_ei_hyper)
         return self._o_hyper
 
     @property
-    def first_peak_idx(self):
+    def get_first_peak_idx(self):
         if self._first_peak_idx is None:
-            self._first_peak_idx = self._find_prominent_peak(self._ei, self.max_idx)
+            self._first_peak_idx = self._find_prominent_peak(self._ei, self.get_max_idx)
         return self._first_peak_idx
 
     @property
-    def o_first_peak(self):
+    def get_o_first_peak(self):
         if self._o_first_peak is None:
-            self._o_first_peak = self._o[self.first_peak_idx]
+            self._o_first_peak = self._o[self.get_first_peak_idx]
         return self._o_first_peak
 
     @property
-    def ei_first_peak(self):
+    def get_ei_first_peak(self):
         if self._ei_first_peak is None:
-            self._ei_first_peak = self._ei[self.first_peak_idx]
+            self._ei_first_peak = self._ei[self.get_first_peak_idx]
         return self._ei_first_peak
 
     @property
-    def min_idx(self) -> int:
+    def get_min_idx(self) -> int:
         if self._min_idx is None:
-            self._min_idx = self._find_prominent_valley(self._ei, self.first_peak_idx,
-                                                        self.max_idx)
+            self._min_idx = self._find_prominent_valley(self._ei, self.get_first_peak_idx,
+                                                        self.get_max_idx)
         return self._min_idx
 
     @property
-    def o_min(self) -> float:
+    def get_o_min(self) -> float:
         if self._o_min is None:
-            self._o_min = self._o[self.min_idx]
+            self._o_min = self._o[self.get_min_idx]
         return self._o_min
 
     @property
-    def ei_min(self) -> float:
+    def get_ei_min(self) -> float:
         if self._ei_min is None:
-            self._ei_min = self._ei[self.min_idx]
+            self._ei_min = self._ei[self.get_min_idx]
         return self._ei_min
 
     @property
-    def area(self) -> tuple[float, np.ndarray, np.ndarray]:
+    def get_area(self) -> tuple[float, np.ndarray, np.ndarray]:
         if self._area is None:
             self._area = self._calculate_area(self._o, self._ei, self._lower_limit,
                                               self._upper_limit)
