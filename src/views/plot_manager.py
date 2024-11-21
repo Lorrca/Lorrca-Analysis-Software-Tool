@@ -7,7 +7,7 @@ class PlotManager:
         """Initialize an empty dictionary to store plot elements."""
         self.elements = {}
 
-    def add_line(self, x, y, label=None, plugin_name=None, **kwargs):
+    def add_line(self, x, y, label, plugin_name, **kwargs):
         """Add a line element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
@@ -19,7 +19,7 @@ class PlotManager:
             'plugin_name': plugin_name,
         }
 
-    def add_point(self, x: float, y: float, label=None, plugin_name=None, **kwargs):
+    def add_point(self, x: float, y: float, label, plugin_name, **kwargs):
         """Add a single point element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
@@ -31,7 +31,7 @@ class PlotManager:
             'plugin_name': plugin_name,
         }
 
-    def add_area(self, x, y1, y2, label=None, plugin_name=None, **kwargs):
+    def add_area(self, x, y1, y2, label, plugin_name, **kwargs):
         """Add an area fill element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
@@ -44,7 +44,7 @@ class PlotManager:
             'plugin_name': plugin_name,
         }
 
-    def add_scatter(self, x, y, label=None, plugin_name=None, **kwargs):
+    def add_scatter(self, x, y, label, plugin_name, **kwargs):
         """Add a scatter plot element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
@@ -56,7 +56,7 @@ class PlotManager:
             'plugin_name': plugin_name,
         }
 
-    def add_histogram(self, data, bins=10, label=None, plugin_name=None, **kwargs):
+    def add_histogram(self, data, bins, label, plugin_name, **kwargs):
         """Add a histogram element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
@@ -68,7 +68,7 @@ class PlotManager:
             'plugin_name': plugin_name,
         }
 
-    def add_bar(self, x, height, label=None, plugin_name=None, **kwargs):
+    def add_bar(self, x, height, label, plugin_name, **kwargs):
         """Add a bar chart element with an automatically generated unique ID."""
         element_id = str(uuid.uuid4())
         self.elements[element_id] = {
