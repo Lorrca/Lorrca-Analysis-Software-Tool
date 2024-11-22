@@ -11,6 +11,7 @@ class PluginManager:
         self.plotter = plotter
         self.plugin_folder = plugin_folder
         self.discovered_plugins = []  # Store discovered plugin names
+        self.used_plugins = []
 
     def scan_plugins(self):
         if not os.path.isdir(self.plugin_folder):
@@ -40,6 +41,7 @@ class PluginManager:
             spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
             plugin_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(plugin_module)
+            self.used_plugins.append(plugin_module)
             return plugin_module
         except Exception as error:
             print(f"Failed to load plugin '{plugin_name}': {error}")

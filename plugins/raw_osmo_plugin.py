@@ -1,9 +1,10 @@
-from src.interfaces.plugin_interface import PluginInterface
+from src.base_classes.base_plugin import BasePlugin
 
 
-class ExamplePlugin(PluginInterface):
-    def __init__(self, model, plot_manager):
-        super().__init__(model, plot_manager)
+class ExamplePlugin(BasePlugin):
+    @property
+    def plugin_name(self):
+        return "Example Plugin"
 
     def run_plugin(self):
         """Implement the plugin's main functionality."""
@@ -11,35 +12,30 @@ class ExamplePlugin(PluginInterface):
         self._max_value()
         self._area()
 
-    def get_plugin_name(self) -> str:
-        """Return the name of this plugin."""
-        return "Example Plugin"
-
     def _raw_curve(self):
         raw_o_range = self.model.get_o
         raw_ei_range = self.model.get_ei
-        self.plot_manager.add_line(
+        self.add_line_element(
             raw_o_range,
             raw_ei_range,
-            label="Raw O vs EI",
-            plugin_name=self.get_plugin_name()
+            label="Raw O vs EI"
         )
 
     def _max_value(self):
         o_max = self.model.get_o_max
         ei_max = self.model.get_ei_max
-        self.plot_manager.add_point(
+        self.add_point_element(
             o_max,
             ei_max,
-            label="Max Value",
-            plugin_name=self.get_plugin_name()
+            label="Max Value"
         )
 
     def _area(self):
-        _, segment_o, segment_ei = self.model.get_area
-        self.plot_manager.add_area(
-            segment_o,
-            segment_ei,
-            label="Segment Area",
-            plugin_name=self.get_plugin_name()
+        area, o_segment, ei_segment = self.model.get_area()
+        self.add_area_element(
+            x=o_segment,
+            y1=ei_segment,
+            y2=[0] * len(ei_segment),  # Baseline of 0 for the area
+            label=f"Segment Area (Area={area:.2f})"
         )
+
