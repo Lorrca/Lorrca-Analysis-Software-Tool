@@ -12,8 +12,3 @@ class PluginInterface(ABC):
     def run_plugin(self):
         """Run the plugin's functionality."""
         pass
-
-    @abstractmethod
-    def get_plugin_name(self) -> str:
-        """Return the name of the plugin."""
-        pass
