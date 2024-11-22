@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem, QHBoxLayout
 )
 from PySide6.QtCore import Qt
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 
 class OsmoUI(QWidget):
@@ -17,6 +18,7 @@ class OsmoUI(QWidget):
         self.plugins_label = None
         self.export_button = None
         self.data_frame = None
+        self.canvas = None  # Canvas to display the figure
 
         self.controller = osmo_controller
 
@@ -34,10 +36,6 @@ class OsmoUI(QWidget):
         self.data_frame = QFrame(self)
         main_layout.addWidget(self.data_frame)
 
-        # Export Button
-        self.export_button = QPushButton("Export", self)
-        main_layout.addWidget(self.export_button)
-
         # Right Layout (Plugins and Elements)
         right_layout = QVBoxLayout()
 
@@ -46,6 +44,21 @@ class OsmoUI(QWidget):
 
         # Elements List Section
         self.setup_elements_list_section(right_layout)
+
+        # Create a widget to hold the plot and export button
+        plot_frame = QFrame(self)
+        plot_layout = QVBoxLayout(plot_frame)
+
+        # Placeholder for plot canvas
+        self.canvas = FigureCanvas(self.controller.get_figure())  # Use the figure from controller
+        plot_layout.addWidget(self.canvas)
+
+        # Export Button (enabled only when plot exists)
+        self.export_button = QPushButton("Export", self)
+        self.export_button.setEnabled(False)  # Initially disabled until plot is available
+        plot_layout.addWidget(self.export_button)
+
+        main_layout.addWidget(plot_frame)
 
         main_layout.addLayout(right_layout)
         self.setLayout(main_layout)

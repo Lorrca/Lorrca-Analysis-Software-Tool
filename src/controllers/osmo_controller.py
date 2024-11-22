@@ -20,6 +20,9 @@ class OsmoController:
         # Scan plugins when the controller is initialized
         self.plugin_manager.scan_plugins()
 
+    def get_figure(self):
+        return self.plot_manager.get_figure()
+
     def get_plugins(self):
         return self.plugin_manager.discovered_plugins
 
