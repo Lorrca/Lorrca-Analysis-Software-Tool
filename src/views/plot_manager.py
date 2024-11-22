@@ -103,6 +103,17 @@ class PlotManager:
             if (plugin_id and val["plugin_id"] == plugin_id)
         }
 
+    def remove_plugin_elements(self, plugin_id):
+        """Removes all elements created by a specific plugin ID."""
+        if not plugin_id:
+            return  # Do nothing if no plugin ID is provided
+
+        # Use dictionary comprehension to filter out elements created by the plugin
+        self.elements = {
+            key: val for key, val in self.elements.items()
+            if val["plugin_id"] != plugin_id
+        }
+
     def visualize_selected_elements(self, element_ids):
         """Visualize elements with a plot title and axis labels."""
         # Clear previous plot elements

@@ -1,16 +1,17 @@
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QFrame, QLabel,
-    QListWidget, QListWidgetItem, QHBoxLayout
-)
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QHBoxLayout, QFrame, QVBoxLayout, QLabel, QListWidget, QPushButton, \
+    QListWidgetItem, QWidget
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 
 class OsmoUI(QWidget):
     def __init__(self, osmo_controller):
         super().__init__()
-
+        self.plot_layout = None
         print(f"OsmoUI {self} created")
+
+        self.controller = osmo_controller
         self.elements_list = None
         self.elements_label = None
         self.refresh_plugins_button = None
@@ -18,9 +19,10 @@ class OsmoUI(QWidget):
         self.plugins_label = None
         self.export_button = None
         self.data_frame = None
-        self.canvas = None  # Canvas to display the figure
 
-        self.controller = osmo_controller
+        # Initialize an empty figure for the canvas
+        self.figure = Figure()  # Empty figure
+        self.canvas = FigureCanvas(self.figure)  # Canvas based on the empty figure
 
         # Set up the layout
         self.setup_layout()
@@ -45,21 +47,10 @@ class OsmoUI(QWidget):
         # Elements List Section
         self.setup_elements_list_section(right_layout)
 
-        # Create a widget to hold the plot and export button
-        plot_frame = QFrame(self)
-        plot_layout = QVBoxLayout(plot_frame)
+        # Plot Widget
+        self.setup_plot_widget()
 
-        # Placeholder for plot canvas
-        self.canvas = FigureCanvas(self.controller.get_figure())  # Use the figure from controller
-        plot_layout.addWidget(self.canvas)
-
-        # Export Button (enabled only when plot exists)
-        self.export_button = QPushButton("Export", self)
-        self.export_button.setEnabled(False)  # Initially disabled until plot is available
-        plot_layout.addWidget(self.export_button)
-
-        main_layout.addWidget(plot_frame)
-
+        # Add the right layout to the main layout
         main_layout.addLayout(right_layout)
         self.setLayout(main_layout)
 
@@ -86,10 +77,41 @@ class OsmoUI(QWidget):
         self.elements_list = QListWidget(self)
         layout.addWidget(self.elements_list)
 
+    def setup_plot_widget(self):
+        """Set up the plot section with a canvas and export button."""
+        plot_frame = QFrame(self)
+        plot_layout = QVBoxLayout(plot_frame)
+
+        # Add the canvas to the layout
+        plot_layout.addWidget(self.canvas)
+
+        # Export Button
+        self.export_button = QPushButton("Export", self)
+        self.export_button.setEnabled(False)  # Initially disabled
+        plot_layout.addWidget(self.export_button)
+
+        # Store the layout for future updates
+        self.plot_layout = plot_layout
+
+        self.layout().addWidget(plot_frame)
+
+    def update_canvas(self):
+        """Update the canvas with a new figure or redraw the existing one."""
+        self.figure = self.controller.get_figure()
+        if self.figure:
+            self.canvas.figure = self.figure  # Replace the figure
+        self.canvas.draw()  # Redraw the canvas
+
+        # Check if the figure contains any visible data (axes or content)
+        is_plot_displayed = any(
+            ax.has_data() for ax in self.canvas.figure.axes  # Check if axes have any data
+        )
+        self.export_button.setEnabled(is_plot_displayed)  # Enable button only if data is present
+
     def update_plugin_list(self):
         """Update the UI list with available plugins."""
         print("Updating plugin list...")
-        plugins = self.controller.get_plugins()  # Ask the controller for plugins
+        plugins = self.controller.get_plugins()
 
         # Clear the current list
         self.plugins_list.clear()

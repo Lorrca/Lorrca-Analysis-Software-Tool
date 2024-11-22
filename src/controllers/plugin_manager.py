@@ -41,7 +41,6 @@ class PluginManager:
             spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
             plugin_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(plugin_module)
-            self.used_plugins.append(plugin_module)
             return plugin_module
         except Exception as error:
             print(f"Failed to load plugin '{plugin_name}': {error}")

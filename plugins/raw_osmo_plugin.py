@@ -38,4 +38,3 @@ class ExamplePlugin(BasePlugin):
             y2=[0] * len(ei_segment),  # Baseline of 0 for the area
             label=f"Segment Area (Area={area:.2f})"
         )
-
