@@ -3,11 +3,15 @@ import uuid
 
 
 class PlotManager:
-    __slots__ = "elements"
+    __slots__ = "elements", "fig", "ax"
 
     def __init__(self):
         """Initialize an empty dictionary to store plot elements."""
         self.elements = {}
+        self.fig, self.ax = plt.subplots()  # Initialize the figure and axis for plotting
+
+    def get_figure(self):
+        return self.fig
 
     def add_line(self, x, y, label: str, plugin_name: str, plugin_id, **kwargs):
         """Add a line element with an automatically generated unique ID."""
@@ -99,14 +103,23 @@ class PlotManager:
             if (plugin_id and val["plugin_id"] == plugin_id)
         }
 
-    def visualize_selected_elements(self, element_ids, title, x_label, y_label):
+    def remove_plugin_elements(self, plugin_id):
+        """Removes all elements created by a specific plugin ID."""
+        if not plugin_id:
+            return  # Do nothing if no plugin ID is provided
+
+        # Use dictionary comprehension to filter out elements created by the plugin
+        self.elements = {
+            key: val for key, val in self.elements.items()
+            if val["plugin_id"] != plugin_id
+        }
+
+    def visualize_selected_elements(self, element_ids):
         """Visualize elements with a plot title and axis labels."""
-        # Clear any existing plots
-        plt.close('all')
+        # Clear previous plot elements
+        self.ax.clear()
 
-        # Create a new figure
-        fig, ax = plt.subplots()
-
+        # Add the selected elements
         for element_id in element_ids:
             element = self.elements.get(element_id)
             if element is None:
@@ -114,28 +127,22 @@ class PlotManager:
 
             element_type = element['type']
             if element_type == 'line':
-                ax.plot(element['x'], element['y'], label=element.get('label'),
-                        **element['kwargs'])
+                self.ax.plot(element['x'], element['y'], label=element.get('label'),
+                             **element['kwargs'])
             elif element_type == 'point':
-                ax.plot(element['x'], element['y'], 'o', label=element.get('label'),
-                        **element['kwargs'])
+                self.ax.plot(element['x'], element['y'], 'o', label=element.get('label'),
+                             **element['kwargs'])
             elif element_type == 'area':
-                ax.fill_between(element['x'], element['y1'], element['y2'],
-                                label=element.get('label'), **element['kwargs'])
+                self.ax.fill_between(element['x'], element['y1'], element['y2'],
+                                     label=element.get('label'), **element['kwargs'])
             elif element_type == 'scatter':
-                ax.scatter(element['x'], element['y'], label=element.get('label'),
-                           **element['kwargs'])
+                self.ax.scatter(element['x'], element['y'], label=element.get('label'),
+                                **element['kwargs'])
             elif element_type == 'histogram':
-                ax.hist(element['data'], bins=element['bins'], label=element.get('label'),
-                        **element['kwargs'])
+                self.ax.hist(element['data'], bins=element['bins'], label=element.get('label'),
+                             **element['kwargs'])
             elif element_type == 'bar':
-                ax.bar(element['x'], element['height'], label=element.get('label'),
-                       **element['kwargs'])
+                self.ax.bar(element['x'], element['height'], label=element.get('label'),
+                            **element['kwargs'])
 
-        # Set the title and axis labels
-        plt.title(title)
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
-        plt.legend()  # Add a legend for better readability
-
-        return fig
+        self.ax.legend()  # Add a legend for better readability

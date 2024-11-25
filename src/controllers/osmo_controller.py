@@ -15,10 +15,9 @@ class OsmoController:
         # Dynamically determine plugin folder location relative to the application
         plugin_folder = os.path.join(os.getcwd(), PLUGINS_FOLDER)
         self.plugin_manager = PluginManager(self.model, self.plot_manager, plugin_folder)
-        self.selected_plugins = []
 
-        # Scan plugins when the controller is initialized
-        self.plugin_manager.scan_plugins()
+    def get_figure(self):
+        return self.plot_manager.get_figure()
 
     def get_plugins(self):
         return self.plugin_manager.discovered_plugins
