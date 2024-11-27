@@ -15,6 +15,7 @@ class ExamplePlugin(BasePlugin):
     def _raw_curve(self):
         raw_o_range = self.model.get_o
         raw_ei_range = self.model.get_ei
+
         self.add_line_element(
             raw_o_range,
             raw_ei_range,
@@ -24,6 +25,7 @@ class ExamplePlugin(BasePlugin):
     def _max_value(self):
         o_max = self.model.get_o_max
         ei_max = self.model.get_ei_max
+
         self.add_point_element(
             o_max,
             ei_max,
@@ -31,7 +33,8 @@ class ExamplePlugin(BasePlugin):
         )
 
     def _area(self):
-        area, o_segment, ei_segment = self.model.get_area()
+        area, o_segment, ei_segment = self.model.get_area
+
         self.add_area_element(
             x=o_segment,
             y1=ei_segment,

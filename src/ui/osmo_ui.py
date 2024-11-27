@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 class DragDropWidget(QFrame):
     """Widget for drag-and-drop file handling."""
+
     def __init__(self, file_loaded_callback):
         super().__init__()
         self.file_loaded_callback = file_loaded_callback
@@ -86,6 +87,7 @@ class OsmoUI(QWidget):
         self.right_layout.addWidget(plugins_label)
 
         self.plugins_list = QListWidget(self)
+        self.plugins_list.itemChanged.connect(self.on_plugin_selection_changed)
         self.right_layout.addWidget(self.plugins_list)
 
         # Refresh Plugins button
@@ -134,9 +136,10 @@ class OsmoUI(QWidget):
         plugins = self.controller.get_plugins()
         self.plugins_list.clear()
 
-        for plugin_name in plugins:
-            item = QListWidgetItem(plugin_name)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable flag
+        for plugin in plugins:
+            item = QListWidgetItem(plugin["name"])
+            item.setData(Qt.UserRole, plugin["id"])  # Store plugin ID for future use
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable
             item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
             self.plugins_list.addItem(item)
 
@@ -145,19 +148,22 @@ class OsmoUI(QWidget):
         elements = self.controller.get_elements()
         self.elements_list.clear()
 
-        for element in elements:
-            item = QListWidgetItem(element)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable flag
-            item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
-            self.elements_list.addItem(item)
+        if elements is not None:
+            for element in elements:
+                item = QListWidgetItem(element)
+                item.setFlags(
+                    item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable flag
+                item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
+                self.elements_list.addItem(item)
 
     def get_checked_plugins(self):
-        """Get a list of checked plugins."""
+        """Get a list of checked plugins by their IDs."""
         checked_plugins = []
         for index in range(self.plugins_list.count()):
             item = self.plugins_list.item(index)
             if item.checkState() == Qt.CheckState.Checked:
-                checked_plugins.append(item.text())
+                plugin_id = item.data(Qt.UserRole)
+                checked_plugins.append(plugin_id)
         return checked_plugins
 
     def get_checked_elements(self):
@@ -168,3 +174,15 @@ class OsmoUI(QWidget):
             if item.checkState() == Qt.CheckState.Checked:
                 checked_elements.append(item.text())
         return checked_elements
+
+    def on_plugin_selection_changed(self, item):
+        """Handles the selection change in the plugin list."""
+        # Get the list of selected plugins by their IDs
+        selected_plugin_ids = self.get_checked_plugins()
+
+        # Call the controller to run the selected plugins
+        if selected_plugin_ids:
+            # Iterate through the selected plugin IDs and run each one
+            for plugin_id in selected_plugin_ids:
+                self.controller.run_plugin(plugin_id)  # Run each plugin individually
+        self.update_elements_list()
