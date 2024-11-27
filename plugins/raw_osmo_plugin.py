@@ -33,11 +33,11 @@ class ExamplePlugin(BasePlugin):
         )
 
     def _area(self):
-        area, o_segment, ei_segment = self.model.get_area
+        _, o_segment, ei_segment = self.model.get_area
 
         self.add_area_element(
             x=o_segment,
             y1=ei_segment,
             y2=[0] * len(ei_segment),  # Baseline of 0 for the area
-            label=f"Segment Area (Area={area:.2f})"
+            label="Area"
         )

@@ -33,7 +33,7 @@ class PluginManager:
                 if isinstance(attr, type) and issubclass(attr,
                                                          BasePlugin) and attr is not BasePlugin:
                     plugin_instance = attr(self.model, self.plot_manager)
-                    self.plugins[plugin_instance.plugin_id] = plugin_instance
+                    self.plugins[plugin_instance.id] = plugin_instance
                     return
         except Exception as e:
             print(f"Error loading plugin {plugin_name}: {e}")
@@ -42,21 +42,21 @@ class PluginManager:
         """Run the plugin if it hasn't been run before."""
         plugin = self.plugins.get(plugin_id)
         if plugin:
-            if plugin.run_status:
-                print(f"Plugin {plugin.plugin_name} has already been run. Reset it to run again.")
-            else:
-                try:
-                    plugin.run_plugin()
-                    plugin.run_status = True  # Mark as run
-                    print(f"Ran plugin: {plugin.plugin_name}")
-                except Exception as e:
-                    print(f"Error running plugin {plugin.plugin_name}: {e}")
+            try:
+                plugin.run_plugin()
+                print(f"Ran plugin: {plugin.plugin_name}")
+            except Exception as e:
+                print(f"Error running plugin {plugin.plugin_name}: {e}")
         else:
             print(f"Plugin with ID {plugin_id} not found.")
 
     def get_all_plugin_info(self):
         """Return a list of dictionaries containing plugin IDs and names."""
         return [
-            {"id": plugin.plugin_id, "name": plugin.plugin_name}
+            {"id": plugin.id, "name": plugin.plugin_name}
             for plugin in self.plugins.values()
         ]
+
+    def get_plugin_by_id(self, plugin_id):
+        """Return the plugin object by its ID."""
+        return self.plugins.get(plugin_id)
