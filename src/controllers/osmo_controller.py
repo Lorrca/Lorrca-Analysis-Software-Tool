@@ -8,13 +8,12 @@ class OsmoController:
     def __init__(self):
         self.model = None
         self.plot_manager = PlotManager()
-        self.plugin_manager = None
+        self.plugin_manager = PluginManager()
 
     def load_file(self, file_path):
-        """Load the file and initialize model, plot manager, and plugin manager."""
+        """Load the file and initialize model"""
         self.model = load_data(file_path)
         if self.model is not None:
-            self.plugin_manager = PluginManager(self.model, self.plot_manager)
             return True
         return False
 
@@ -24,7 +23,16 @@ class OsmoController:
 
     def get_plugins(self):
         """Retrieve the list of discovered plugins, including their IDs."""
-        self.plugin_manager.load_plugins()
+        if self.model is None:
+            print("No model is loaded. Cannot retrieve plugins.")
+            return []
+
+        if not self.plugin_manager.plugins:  # Check if plugins are already loaded
+            print("Loading plugins...")
+            self.plugin_manager.load_plugins(self.model, self.plot_manager)
+        else:
+            print("Plugins already loaded.")
+
         return self.plugin_manager.get_all_plugin_info()
 
     def run_plugin(self, plugin_ids):
@@ -42,7 +50,6 @@ class OsmoController:
         """Draw selected elements."""
         if self.plot_manager:
             self.plot_manager.visualize_selected_elements(element_ids)
-
 
     def __del__(self):
         """Clean up when the controller is deleted."""
