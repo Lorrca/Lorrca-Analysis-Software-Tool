@@ -37,10 +37,9 @@ class OsmoController:
 
     def run_plugin(self, plugin_ids):
         """Run the plugin(s) with the provided plugin IDs."""
-        if self.plugin_manager:
-            for plugin_id in plugin_ids:
-                self.plugin_manager.run_plugin(plugin_id)
-                print(self.plot_manager.get_all_elements())
+        for plugin_id in plugin_ids:
+            self.plugin_manager.run_plugin(plugin_id)
+            print(self.plot_manager.get_all_elements())
 
     def get_elements(self):
         """Retrieve all elements for list."""

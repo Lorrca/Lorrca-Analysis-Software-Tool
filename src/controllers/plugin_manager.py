@@ -53,7 +53,9 @@ class PluginManager:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
 
     def get_all_plugin_info(self):
+        """Return a list of dictionaries containing plugin IDs and names."""
         return [{"id": plugin.id, "name": plugin.plugin_name} for plugin in self.plugins.values()]
 
     def get_plugin_by_id(self, plugin_id):
+        """Return the plugin object by its ID."""
         return self.plugins.get(plugin_id)
