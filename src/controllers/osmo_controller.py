@@ -48,8 +48,7 @@ class OsmoController:
 
     def draw_elements(self, element_ids):
         """Draw selected elements."""
-        if self.plot_manager:
-            self.plot_manager.visualize_selected_elements(element_ids)
+        self.plot_manager.visualize_selected_elements(element_ids)
 
     def __del__(self):
         """Clean up when the controller is deleted."""
