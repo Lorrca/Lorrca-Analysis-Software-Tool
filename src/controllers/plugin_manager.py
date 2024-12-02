@@ -1,72 +1,61 @@
+import importlib
+import logging
 import os
-import importlib.util
+from src.base_classes.base_plugin import BasePlugin
+
+PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), '../plugins')
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class PluginManager:
-    def __init__(self, model, plotter, plugin_folder):
-        """
-        Initialize the PluginManager with the model, plotter, and plugin folder.
-        """
-        self.model = model
-        self.plotter = plotter
-        self.plugin_folder = plugin_folder
-        self.discovered_plugins = []  # Store discovered plugin names
-        self.used_plugins = []
+    def __init__(self, plugins_folder=PLUGINS_FOLDER):
+        self.plugins = {}
+        self.plugins_folder = plugins_folder
 
-    def scan_plugins(self):
-        if not os.path.isdir(self.plugin_folder):
-            print(f"Plugin folder '{self.plugin_folder}' does not exist.")
+    def load_plugins(self, model, plot_manager):
+        if not os.path.isdir(self.plugins_folder):
+            logger.warning(f"Plugin folder {self.plugins_folder} not found.")
             return
 
-        self.discovered_plugins = []
-        for filename in os.listdir(self.plugin_folder):
-            if filename.endswith("_plugin.py"):
-                plugin_name = filename[:-3]
-                self.discovered_plugins.append(plugin_name)
+        for file_name in os.listdir(self.plugins_folder):
+            if file_name.endswith(".py") and file_name != "__init__.py":
+                plugin_name = file_name[:-3]
+                self._load_plugin(plugin_name, model, plot_manager)
 
-        print(f"Discovered plugins: {self.discovered_plugins}")  # Debugging line to check plugins
-
-    def load_plugin(self, plugin_name):
-        """
-        Load a plugin module by its name.
-        Returns the loaded module or None if loading fails.
-        """
-        plugin_path = os.path.join(self.plugin_folder, f"{plugin_name}.py")
-
-        if not os.path.isfile(plugin_path):
-            print(f"Plugin '{plugin_name}' not found.")
-            return None
-
+    def _load_plugin(self, plugin_name, model, plot_manager):
         try:
-            spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
-            plugin_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(plugin_module)
-            return plugin_module
-        except Exception as error:
-            print(f"Failed to load plugin '{plugin_name}': {error}")
-            return None
+            plugin_module = importlib.import_module(f"plugins.{plugin_name}")
+            for attr_name in dir(plugin_module):
+                attr = getattr(plugin_module, attr_name)
+                if isinstance(attr, type) and issubclass(attr,
+                                                         BasePlugin) and attr is not BasePlugin:
+                    plugin_instance = attr(model, plot_manager)
+                    if plugin_instance.id in self.plugins:
+                        logger.warning(f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
+                        return
+                    self.plugins[plugin_instance.id] = plugin_instance
+                    logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
+                    return
+        except Exception as e:
+            logger.error(f"Error loading plugin {plugin_name}: {e}")
 
-    def run_selected_plugins(self, selected_plugins):
-        """
-        Run the selected plugins by their names.
-        Each plugin must define a 'run_plugin' function.
-        """
-        for plugin_name in selected_plugins:
-            if plugin_name not in self.discovered_plugins:
-                print(f"Plugin '{plugin_name}' is not recognized.")
-                continue
+    def run_plugin(self, plugin_id):
+        plugin = self.plugins.get(plugin_id)
+        if plugin:
+            try:
+                plugin.run_plugin()
+                logger.info(f"Ran plugin: {plugin.plugin_name}")
+            except Exception as e:
+                logger.error(f"Error running plugin {plugin.plugin_name}: {e}")
+        else:
+            logger.warning(f"Plugin with ID {plugin_id} not found.")
 
-            # Dynamically load the plugin
-            plugin_module = self.load_plugin(plugin_name)
-            if not plugin_module:
-                continue
+    def get_all_plugin_info(self):
+        """Return a list of dictionaries containing plugin IDs and names."""
+        return [{"id": plugin.id, "name": plugin.plugin_name} for plugin in self.plugins.values()]
 
-            # Execute the 'run_plugin' function if it exists
-            if hasattr(plugin_module, "run_plugin"):
-                print(f"Running plugin: {plugin_name}")
-                try:
-                    plugin_module.run_plugin(self.model, self.plotter)
-                except Exception as error:
-                    print(f"Error while running plugin '{plugin_name}': {error}")
-            else:
-                print(f"Plugin '{plugin_name}' does not have a 'run_plugin' function.")
+    def get_plugin_by_id(self, plugin_id):
+        """Return the plugin object by its ID."""
+        return self.plugins.get(plugin_id)

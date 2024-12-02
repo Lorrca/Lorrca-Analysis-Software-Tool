@@ -1,10 +1,10 @@
 from src.base_classes.base_plugin import BasePlugin
 
 
-class ExamplePlugin(BasePlugin):
+class OtherPlugin(BasePlugin):
     @property
     def plugin_name(self):
-        return "Example Plugin"
+        return "Other Plugin"
 
     def run_plugin(self):
         """Implement the plugin's main functionality."""

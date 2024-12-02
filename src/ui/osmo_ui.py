@@ -1,127 +1,164 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QFrame, QVBoxLayout, QLabel, QListWidget, QPushButton, \
-    QListWidgetItem, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
+    QWidget, QStackedLayout, QListWidgetItem
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+
+
+class DragDropWidget(QFrame):
+    """Widget for drag-and-drop file handling."""
+
+    def __init__(self, file_loaded_callback):
+        super().__init__()
+        self.file_loaded_callback = file_loaded_callback
+        self.setAcceptDrops(True)
+        self.setStyleSheet("background-color: lightgray; border: 2px dashed gray;")
+        layout = QVBoxLayout(self)
+        label = QLabel("Drag and drop a file here", self)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+        self.setLayout(layout)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent):
+        urls = event.mimeData().urls()
+        if urls:
+            file_path = urls[0].toLocalFile()
+            if file_path:
+                self.file_loaded_callback(file_path)
 
 
 class OsmoUI(QWidget):
     def __init__(self, osmo_controller):
         super().__init__()
-        self.plot_layout = None
-        print(f"OsmoUI {self} created")
-
         self.controller = osmo_controller
-        self.elements_list = None
-        self.elements_label = None
-        self.refresh_plugins_button = None
+
+        # Main frame setup
+        self.main_frame = QFrame(self)
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.addWidget(self.main_frame)
+        self.setLayout(self.main_layout)
+
+        # Drag-and-drop widget as the initial content
+        self.drag_drop_widget = DragDropWidget(self.file_loaded)
+        self.main_frame_layout = QStackedLayout(self.main_frame)
+        self.main_frame_layout.addWidget(self.drag_drop_widget)
+
+        # Create placeholders for main layout components
+        self.left_layout = None
+        self.right_layout = None
+        self.figure = None
+        self.canvas = None
         self.plugins_list = None
-        self.plugins_label = None
+        self.elements_list = None
         self.export_button = None
-        self.data_frame = None
 
-        # Initialize an empty figure for the canvas
-        self.figure = Figure()  # Empty figure
-        self.canvas = FigureCanvas(self.figure)  # Canvas based on the empty figure
+    def setup_main_layout(self):
+        """Set up the main application layout."""
+        # Horizontal layout for main frame
+        horizontal_layout = QHBoxLayout()
 
-        # Set up the layout
-        self.setup_layout()
+        # Left vertical layout
+        left_frame = QFrame(self.main_frame)
+        self.left_layout = QVBoxLayout(left_frame)
 
-        # Populate the plugin list on initialization
-        self.update_plugin_list()
+        # Canvas
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.left_layout.addWidget(self.canvas)
 
-    def setup_layout(self):
-        """Set up the main layout and widgets."""
-        main_layout = QHBoxLayout(self)
-
-        # Left Frame
-        self.data_frame = QFrame(self)
-        main_layout.addWidget(self.data_frame)
-
-        # Right Layout (Plugins and Elements)
-        right_layout = QVBoxLayout()
-
-        # Plugin List Section
-        self.setup_plugin_list_section(right_layout)
-
-        # Elements List Section
-        self.setup_elements_list_section(right_layout)
-
-        # Plot Widget
-        self.setup_plot_widget()
-
-        # Add the right layout to the main layout
-        main_layout.addLayout(right_layout)
-        self.setLayout(main_layout)
-
-    def setup_plugin_list_section(self, layout):
-        """Set up the plugin list section."""
-        self.plugins_label = QLabel("Plugins", self)
-        layout.addWidget(self.plugins_label)
-
-        # Plugins List Widget
-        self.plugins_list = QListWidget(self)
-        layout.addWidget(self.plugins_list)
-
-        # Refresh Plugins Button
-        self.refresh_plugins_button = QPushButton("Refresh Plugins", self)
-        self.refresh_plugins_button.clicked.connect(self.update_plugin_list)
-        layout.addWidget(self.refresh_plugins_button)
-
-    def setup_elements_list_section(self, layout):
-        """Set up the elements list section."""
-        self.elements_label = QLabel("Elements", self)
-        layout.addWidget(self.elements_label)
-
-        # Elements List Widget
-        self.elements_list = QListWidget(self)
-        layout.addWidget(self.elements_list)
-
-    def setup_plot_widget(self):
-        """Set up the plot section with a canvas and export button."""
-        plot_frame = QFrame(self)
-        plot_layout = QVBoxLayout(plot_frame)
-
-        # Add the canvas to the layout
-        plot_layout.addWidget(self.canvas)
-
-        # Export Button
+        # Export button
         self.export_button = QPushButton("Export", self)
-        self.export_button.setEnabled(False)  # Initially disabled
-        plot_layout.addWidget(self.export_button)
+        self.export_button.setEnabled(False)
+        self.left_layout.addWidget(self.export_button)
 
-        # Store the layout for future updates
-        self.plot_layout = plot_layout
+        horizontal_layout.addWidget(left_frame)
 
-        self.layout().addWidget(plot_frame)
+        # Right vertical layout
+        right_frame = QFrame(self.main_frame)
+        self.right_layout = QVBoxLayout(right_frame)
+
+        # Plugins list
+        plugins_label = QLabel("Plugins", self)
+        self.right_layout.addWidget(plugins_label)
+
+        self.plugins_list = QListWidget(self)
+        self.plugins_list.itemChanged.connect(self.on_plugin_selection_changed)
+        self.right_layout.addWidget(self.plugins_list)
+
+        # Refresh Plugins button
+        refresh_button = QPushButton("Refresh Plugins", self)
+        refresh_button.clicked.connect(self.update_plugin_list)
+        self.right_layout.addWidget(refresh_button)
+
+        # Elements list
+        elements_label = QLabel("Elements", self)
+        self.right_layout.addWidget(elements_label)
+
+        self.elements_list = QListWidget(self)
+        self.right_layout.addWidget(self.elements_list)
+
+        horizontal_layout.addWidget(right_frame)
+
+        # Replace drag-and-drop widget with the main layout
+        main_widget = QWidget()
+        main_widget.setLayout(horizontal_layout)
+        self.main_frame_layout.addWidget(main_widget)
+        self.main_frame_layout.setCurrentWidget(main_widget)
+
+    def file_loaded(self, file_path):
+        """Handle file loading and initialize the main layout."""
+        print(f"File loaded: {file_path}")
+        if self.controller.load_file(file_path):  # Assume controller processes the file
+            self.setup_main_layout()
+            self.update_plugin_list()
+            self.update_canvas()
 
     def update_canvas(self):
-        """Update the canvas with a new figure or redraw the existing one."""
-        self.figure = self.controller.get_figure()
+        """Update the canvas with a new figure."""
         if self.figure:
-            self.canvas.figure = self.figure  # Replace the figure
-        self.canvas.draw()  # Redraw the canvas
+            self.figure = self.controller.get_figure()
+            self.canvas.figure = self.figure
+            self.canvas.draw()
 
-        # Check if the figure contains any visible data (axes or content)
-        is_plot_displayed = any(
-            ax.has_data() for ax in self.canvas.figure.axes  # Check if axes have any data
-        )
-        self.export_button.setEnabled(is_plot_displayed)  # Enable button only if data is present
+            # Enable the export button if there's visible data
+            self.export_button.setEnabled(
+                any(ax.has_data() for ax in self.figure.axes)
+            )
 
     def update_plugin_list(self):
-        """Update the UI list with available plugins."""
-        print("Updating plugin list...")
+        """Update the plugin list with checkboxes."""
         plugins = self.controller.get_plugins()
-
-        # Clear the current list
         self.plugins_list.clear()
 
-        # Populate the plugin list
-        for plugin_name in plugins:
-            item = QListWidgetItem(plugin_name)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
+        for plugin in plugins:
+            item = QListWidgetItem(plugin["name"])
+            item.setData(Qt.UserRole, plugin["id"])  # Store plugin ID for future use
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable
+            item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
             self.plugins_list.addItem(item)
 
-    def __del__(self):
-        print(f"OsmoUI {self} deleted")
+    def get_checked_plugins(self):
+        """Get a list of checked plugins by their IDs."""
+        checked_plugins = []
+        for index in range(self.plugins_list.count()):
+            item = self.plugins_list.item(index)
+            if item.checkState() == Qt.CheckState.Checked:
+                plugin_id = item.data(Qt.UserRole)
+                checked_plugins.append(plugin_id)
+        return checked_plugins
+
+    def on_plugin_selection_changed(self, item):
+        """Handles the selection change in the plugin list."""
+        # Get the plugin ID from the item data
+        plugin_id = item.data(Qt.UserRole)
+
+        # Check if the plugin is selected or deselected
+        if item.checkState() == Qt.CheckState.Checked:
+            # Run the selected plugin
+            self.controller.run_plugin(
+                [plugin_id])  # Pass the list of selected plugin IDs (even if it's just one)
