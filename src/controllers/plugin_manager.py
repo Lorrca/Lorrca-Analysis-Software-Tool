@@ -47,13 +47,8 @@ class PluginManager:
         plugin = self.plugins.get(plugin_id)
         if plugin:
             try:
-                # Run the plugin and retrieve any generated elements
+                # Run the plugin
                 plugin.run_plugin()
-                elements = plugin.get_elements()
-
-                # Register elements with the PlotManager
-                for element in elements:
-                    plugin.plot_manager.add_element(element)
 
                 logger.info(f"Ran plugin: {plugin.plugin_name}")
             except Exception as e:
@@ -69,7 +64,3 @@ class PluginManager:
     def get_plugin_by_id(self, plugin_id):
         """Return the plugin object by its ID."""
         return self.plugins.get(plugin_id)
-
-    def is_plugin_loaded(self, plugin_id):
-        """Check if a plugin is already loaded."""
-        return plugin_id in self.plugins

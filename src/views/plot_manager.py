@@ -21,14 +21,6 @@ class PlotManager:
                 "Only instances of PlotElement (or subclasses) can be added.")
         self.elements[element.id] = element
 
-    def remove_element(self, element):
-        """Remove a specific plot element."""
-        if element.id in self.elements:
-            del self.elements[element.id]
-            logger.info(f"Element {element.id} removed from PlotManager.")
-        else:
-            logger.warning(f"Element {element.id} not found in PlotManager.")
-
     def remove_element_by_id(self, element_id):
         """Remove a plot element by its ID."""
         if element_id in self.elements:
@@ -67,17 +59,3 @@ class PlotManager:
                     element.render(self.ax)
 
         self.ax.legend()  # Add a legend for better readability
-
-    def set_element_selection(self, element_id, is_selected):
-        """Set the selection state for a given element."""
-        element = self.get_element_by_id(element_id)
-        if element:
-            element.set_selected(is_selected)
-            logger.info(
-                f"Element {element_id} selection state set to {is_selected}.")
-        else:
-            logger.warning(f"Element {element_id} not found in PlotManager.")
-
-    def cleanup_plugin_elements(self, plugin_id):
-        """Deregister all elements associated with a given plugin ID."""
-        self.remove_elements_by_plugin_id(plugin_id)

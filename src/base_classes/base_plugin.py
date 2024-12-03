@@ -35,26 +35,12 @@ class BasePlugin(ABC):
         element = AreaElement(x, y1, y2, label, self.plugin_name, self.id)
         self.plot_manager.add_element(element)
 
-    def remove_element(self, element_id):
-        """Remove an element by its ID."""
-        success = self.plot_manager.remove_element_by_id(element_id)
-        if success:
-            logger.info(f"Element {element_id} removed from plugin {self.plugin_name}.")
-        else:
-            logger.warning(
-                f"Element {element_id} not found in PlotManager for plugin {self.plugin_name}."
-            )
-
     def cleanup(self):
         """Remove all elements associated with this plugin from the PlotManager."""
         removed_count = self.plot_manager.remove_elements_by_plugin_id(self.id)
         logger.info(
             f"Removed {removed_count} elements for plugin {self.plugin_name}."
         )
-
-    def get_elements(self):
-        """Retrieve all elements associated with this plugin."""
-        return self.plot_manager.get_elements_by_plugin_id(self.id)
 
     @abstractmethod
     def run_plugin(self):
