@@ -17,9 +17,10 @@ class OsmoController:
             return True
         return False
 
-    def get_figure(self):
-        """Retrieve the figure from plot manager."""
-        return self.plot_manager.get_figure() if self.plot_manager else None
+    def get_updated_canvas(self, element_ids):
+        """Ask PlotManager to visualize selected elements and return the canvas."""
+        self.plot_manager.visualize_selected_elements(element_ids)
+        return self.plot_manager.get_figure()
 
     def get_plugins(self):
         """Retrieve the list of discovered plugins, including their IDs."""
@@ -35,13 +36,33 @@ class OsmoController:
 
         return self.plugin_manager.get_all_plugin_info()
 
+    def get_elements_by_plugin_id(self, plugin_id):
+        """Retrieve all elements created by a specific plugin."""
+        if not self.plugin_manager.is_plugin_loaded(plugin_id):
+            print(f"Plugin with ID {plugin_id} is not loaded.")
+            return []
+
+        # Find elements that belong to the given plugin ID
+        return [element for element in
+                self.plot_manager.get_all_elements().values() if
+                element.plugin_id == plugin_id]
+
+    def reset_plugin(self, plugin_id):
+        """Reset a specific plugin (cleanup its internal state)."""
+        plugin = self.plugin_manager.get_plugin_by_id(plugin_id)
+        if plugin:
+            plugin.cleanup()
+            print(f"Plugin {plugin_id} has been reset.")
+        else:
+            print(f"Plugin {plugin_id} not found.")
+
     def run_plugin(self, plugin_ids):
         """Run the plugin(s) with the provided plugin IDs."""
         for plugin_id in plugin_ids:
             self.plugin_manager.run_plugin(plugin_id)
             print(self.plot_manager.get_all_elements())
 
-    def get_elements(self):
+    def get_all_elements(self):
         """Retrieve all elements for list."""
         return self.plot_manager.get_all_elements()
 

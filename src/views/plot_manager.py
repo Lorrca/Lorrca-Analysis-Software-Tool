@@ -1,6 +1,8 @@
+import logging
 from matplotlib import pyplot as plt
-
 from src.models.plot_element import PlotElement
+
+logger = logging.getLogger(__name__)
 
 
 class PlotManager:
@@ -15,8 +17,17 @@ class PlotManager:
     def add_element(self, element: PlotElement):
         """Add a plot element to the manager."""
         if not isinstance(element, PlotElement):
-            raise TypeError("Only instances of PlotElement (or subclasses) can be added.")
+            raise TypeError(
+                "Only instances of PlotElement (or subclasses) can be added.")
         self.elements[element.id] = element
+
+    def remove_element(self, element):
+        """Remove a specific plot element."""
+        if element.id in self.elements:
+            del self.elements[element.id]
+            logger.info(f"Element {element.id} removed from PlotManager.")
+        else:
+            logger.warning(f"Element {element.id} not found in PlotManager.")
 
     def remove_element_by_id(self, element_id):
         """Remove a plot element by its ID."""
@@ -25,7 +36,9 @@ class PlotManager:
 
     def remove_elements_by_plugin_id(self, plugin_id):
         """Remove all plot elements associated with a given plugin ID."""
-        elements_to_remove = [element_id for element_id, element in self.elements.items() if element.plugin_id == plugin_id]
+        elements_to_remove = [element_id for element_id, element in
+                              self.elements.items() if
+                              element.plugin_id == plugin_id]
         for element_id in elements_to_remove:
             self.remove_element_by_id(element_id)
 
@@ -53,3 +66,7 @@ class PlotManager:
 
         self.ax.legend()  # Add a legend for better readability
         self.fig.canvas.draw()  # Redraw the canvas to reflect changes
+
+    def cleanup_plugin_elements(self, plugin_id):
+        """Deregister all elements associated with a given plugin ID."""
+        self.remove_elements_by_plugin_id(plugin_id)

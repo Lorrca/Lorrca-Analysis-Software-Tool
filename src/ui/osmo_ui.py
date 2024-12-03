@@ -76,7 +76,7 @@ class OsmoUI(QWidget):
         self.export_button.setEnabled(False)
         self.left_layout.addWidget(self.export_button)
 
-        horizontal_layout.addWidget(left_frame)
+        horizontal_layout.addWidget(left_frame, stretch=1)
 
         # Right vertical layout
         right_frame = QFrame(self.main_frame)
@@ -119,9 +119,17 @@ class OsmoUI(QWidget):
             self.update_canvas()
 
     def update_canvas(self):
-        """Update the canvas with a new figure."""
+        """Update the canvas with selected elements."""
         if self.figure:
-            self.figure = self.controller.get_figure()
+            # Get the list of selected element IDs
+            selected_element_ids = [
+                self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
+                for index in range(self.elements_list.count())
+            ]
+
+            # Update the figure by asking the controller for the updated canvas
+            self.figure = self.controller.get_updated_canvas(
+                selected_element_ids)
             self.canvas.figure = self.figure
             self.canvas.draw()
 
@@ -137,7 +145,7 @@ class OsmoUI(QWidget):
 
         for plugin in plugins:
             item = QListWidgetItem(plugin["name"])
-            item.setData(Qt.UserRole, plugin["id"])  # Store plugin ID for future use
+            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin ID for future use
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable
             item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
             self.plugins_list.addItem(item)
@@ -148,17 +156,35 @@ class OsmoUI(QWidget):
         for index in range(self.plugins_list.count()):
             item = self.plugins_list.item(index)
             if item.checkState() == Qt.CheckState.Checked:
-                plugin_id = item.data(Qt.UserRole)
+                plugin_id = item.data(Qt.ItemDataRole.UserRole)
                 checked_plugins.append(plugin_id)
         return checked_plugins
 
+    def update_elements_list(self):
+        """Update the elements list to reflect the current state."""
+        self.elements_list.clear()
+        elements = self.controller.get_all_elements()
+
+        for element_id, element in elements.items():
+            item = QListWidgetItem(f"{element.label}, {element.plugin_name}")
+            item.setData(Qt.ItemDataRole.UserRole, element_id)  # Store the element ID
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable
+            item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
+            self.elements_list.addItem(item)
+
     def on_plugin_selection_changed(self, item):
         """Handles the selection change in the plugin list."""
-        # Get the plugin ID from the item data
-        plugin_id = item.data(Qt.UserRole)
+        plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Get the plugin ID
 
-        # Check if the plugin is selected or deselected
         if item.checkState() == Qt.CheckState.Checked:
-            # Run the selected plugin
-            self.controller.run_plugin(
-                [plugin_id])  # Pass the list of selected plugin IDs (even if it's just one)
+            # Run the plugin and update the elements
+            self.controller.run_plugin([plugin_id])
+            self.update_elements_list()
+            self.update_canvas()  # Redraw canvas with new elements
+        else:
+            # Reset the plugin and remove its elements
+            self.controller.reset_plugin(plugin_id)
+            self.controller.plot_manager.remove_elements_by_plugin_id(
+                plugin_id)
+            self.update_elements_list()
+            self.update_canvas()  # Redraw canvas without elements of the deselected plugin
