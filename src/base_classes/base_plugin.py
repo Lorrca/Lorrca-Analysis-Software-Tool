@@ -1,12 +1,12 @@
 import logging
 import uuid
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from src.models.plot_element import LineElement, AreaElement, ScatterElement
 
 logger = logging.getLogger(__name__)
 
 
-class BasePlugin:
+class BasePlugin(ABC):
     """Base class for all plugins."""
 
     def __init__(self, model, plot_manager):
@@ -19,7 +19,7 @@ class BasePlugin:
     @abstractmethod
     def plugin_name(self) -> str:
         """Property for plugin name, to be overridden by subclasses."""
-        pass  # Subclasses must implement the plugin name.
+        pass
 
     def _register_element(self, element):
         """Register an element with the PlotManager and store it locally."""
@@ -29,17 +29,17 @@ class BasePlugin:
     def add_line_element(self, x: list, y: list, label: str):
         """Helper method to add a line plot element."""
         element = LineElement(x, y, label, self.plugin_name, self.id)
-        self.plot_manager.add_element(element)
+        self._register_element(element)
 
     def add_point_element(self, x: float, y: float, label: str):
         """Helper method to add a point plot element."""
         element = ScatterElement([x], [y], label, self.plugin_name, self.id)
-        self.plot_manager.add_element(element)
+        self._register_element(element)
 
     def add_area_element(self, x: list, y1: list, y2: list, label: str):
         """Helper method to add an area plot element."""
         element = AreaElement(x, y1, y2, label, self.plugin_name, self.id)
-        self.plot_manager.add_element(element)
+        self._register_element(element)
 
     def remove_element(self, element_id):
         """Remove an element by its ID."""
@@ -48,18 +48,20 @@ class BasePlugin:
             self.elements.remove(element)
             self.plot_manager.remove_element(element)
             logger.info(
-                f"Element {element_id} removed from plugin {self.plugin_name}.")
+                f"Element {element_id} removed from plugin {self.plugin_name}."
+            )
         else:
             logger.warning(
-                f"Element {element_id} not found in plugin {self.plugin_name}.")
+                f"Element {element_id} not found in plugin {self.plugin_name}."
+            )
 
     def cleanup(self):
         """Deregister all elements from the PlotManager."""
         for element in self.elements:
             self.plot_manager.remove_element(element)
             logger.info(f"Element {element.id} removed from plugin {self.plugin_name}.")
-            self.elements.clear()
-            logger.info(f"All elements from plugin {self.plugin_name} have been cleaned up.")
+        self.elements.clear()
+        logger.info(f"All elements from plugin {self.plugin_name} have been cleaned up.")
 
     def get_elements(self):
         """Return all elements stored by the plugin."""

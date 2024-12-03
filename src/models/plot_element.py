@@ -10,21 +10,16 @@ class PlotElement(ABC):
         self.plugin_name = plugin_name
         self.plugin_id = plugin_id
         self.kwargs = kwargs
+        self.selected = True  # Default to selected
 
     @abstractmethod
     def render(self, ax):
         """Subclasses must implement the render method to plot the element."""
         pass
 
-    def get_element_info(self):
-        """Return a dictionary with the element's name, plugin name, and ID."""
-        return {
-            'id': self.id,
-            'name': self.__class__.__name__,
-            'label': self.label,
-            'plugin_name': self.plugin_name,
-            'plugin_id': self.plugin_id,
-        }
+    def set_selected(self, is_selected):
+        """Set the selection state of the element."""
+        self.selected = is_selected
 
 
 # Line plot element
@@ -47,7 +42,8 @@ class AreaElement(PlotElement):
         self.y2 = y2
 
     def render(self, ax):
-        ax.fill_between(self.x, self.y1, self.y2, label=self.label, **self.kwargs)
+        ax.fill_between(self.x, self.y1, self.y2, label=self.label,
+                        **self.kwargs)
 
 
 # Scatter plot element

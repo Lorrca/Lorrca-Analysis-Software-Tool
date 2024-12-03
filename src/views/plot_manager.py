@@ -50,22 +50,33 @@ class PlotManager:
         """Return the dictionary of all elements."""
         return self.elements
 
-    def visualize_selected_elements(self, element_ids):
-        """Visualize elements with a plot title and axis labels."""
-        # Clear previous plot elements
-        self.ax.clear()
+    def visualize_selected_elements(self, selected_element_ids=None):
+        """Visualize only selected elements based on provided IDs."""
+        self.ax.clear()  # Clear previous plot elements
 
-        # Add the selected elements
-        for element_id in element_ids:
-            element = self.get_element_by_id(element_id)
-            if element is None:
-                continue  # Skip if the element ID does not exist
-
-            # Render the element on the axis
-            element.render(self.ax)
+        if selected_element_ids is None:
+            # If no specific IDs are provided, visualize all selected elements
+            for element in self.elements.values():
+                if element.selected:  # Check if selected
+                    element.render(self.ax)
+        else:
+            # Visualize only the elements whose IDs are in the provided list
+            for element_id in selected_element_ids:
+                element = self.get_element_by_id(element_id)
+                if element and element.selected:  # Check if the element exists and is selected
+                    element.render(self.ax)
 
         self.ax.legend()  # Add a legend for better readability
-        self.fig.canvas.draw()  # Redraw the canvas to reflect changes
+
+    def set_element_selection(self, element_id, is_selected):
+        """Set the selection state for a given element."""
+        element = self.get_element_by_id(element_id)
+        if element:
+            element.set_selected(is_selected)
+            logger.info(
+                f"Element {element_id} selection state set to {is_selected}.")
+        else:
+            logger.warning(f"Element {element_id} not found in PlotManager.")
 
     def cleanup_plugin_elements(self, plugin_id):
         """Deregister all elements associated with a given plugin ID."""
