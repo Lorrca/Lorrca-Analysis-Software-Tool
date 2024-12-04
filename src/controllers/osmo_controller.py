@@ -5,7 +5,6 @@ from src.utils.osmo_data_loader import load_data
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class OsmoController:

@@ -14,7 +14,6 @@ from src.views.plot_manager import DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_DPI, D
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class DragDropWidget(QFrame):
