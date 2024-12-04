@@ -172,16 +172,6 @@ class OsmoUI(QWidget):
                 Qt.CheckState.Unchecked)  # Default state is unchecked
             self.plugins_list.addItem(item)
 
-    def get_checked_plugins(self):
-        """Get a list of checked plugins by their IDs."""
-        checked_plugins = []
-        for index in range(self.plugins_list.count()):
-            item = self.plugins_list.item(index)
-            if item.checkState() == Qt.CheckState.Checked:
-                plugin_id = item.data(Qt.ItemDataRole.UserRole)
-                checked_plugins.append(plugin_id)
-        return checked_plugins
-
     def update_elements_list(self):
         """Update the elements list to reflect the current state."""
         self.elements_list.clear()
@@ -205,9 +195,8 @@ class OsmoUI(QWidget):
             self.update_elements_list()
             self.update_canvas()  # Redraw canvas with new elements
         else:
-            # Reset the plugin and remove its elements
-            self.controller.reset_plugin(plugin_id)
-            self.controller.plot_manager.remove_elements_by_plugin_id(
+            # Remove plugin elements
+            self.controller.remove_elements_by_plugin_id(
                 plugin_id)
             self.update_elements_list()
             self.update_canvas()  # Redraw canvas without elements of the deselected plugin

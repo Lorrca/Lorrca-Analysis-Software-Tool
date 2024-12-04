@@ -45,28 +45,6 @@ class OsmoController:
         logger.info(f"Retrieved plugins: {plugins_info}")
         return plugins_info
 
-    def get_elements_by_plugin_id(self, plugin_id):
-        """Retrieve all elements created by a specific plugin."""
-        if not self.plugin_manager.is_plugin_loaded(plugin_id):
-            logger.warning(f"Plugin with ID {plugin_id} is not loaded.")
-            return []
-
-        elements = [element for element in
-                    self.plot_manager.get_all_elements().values() if
-                    element.plugin_id == plugin_id]
-        logger.info(
-            f"Retrieved {len(elements)} elements for plugin ID {plugin_id}.")
-        return elements
-
-    def reset_plugin(self, plugin_id):
-        """Reset a specific plugin (cleanup its internal state)."""
-        plugin = self.plugin_manager.get_plugin_by_id(plugin_id)
-        if plugin:
-            plugin.cleanup()
-            logger.info(f"Plugin {plugin_id} has been reset.")
-        else:
-            logger.warning(f"Plugin {plugin_id} not found.")
-
     def run_plugin(self, plugin_ids):
         """Run the plugin(s) with the provided plugin IDs."""
         for plugin_id in plugin_ids:
@@ -80,20 +58,8 @@ class OsmoController:
         logger.info(f"Retrieved {len(elements)} elements.")
         return elements
 
-    def set_element_selection(self, element_id, is_selected):
-        """Set the selection state for a given element."""
-        element = self.plot_manager.get_element_by_id(element_id)
-        if element:
-            element.set_selected(is_selected)
-            logger.info(
-                f"Element {element_id} selection state set to {is_selected}.")
-        else:
-            logger.warning(f"Element {element_id} not found in PlotManager.")
-
-    def draw_elements(self):
-        """Draw only selected elements."""
-        self.plot_manager.visualize_selected_elements()
-        logger.info("Redrew canvas with only selected elements.")
+    def remove_elements_by_plugin_id(self, plugin_id):
+        self.plot_manager.remove_elements_by_plugin_id(plugin_id)
 
     def __del__(self):
         """Clean up when the controller is deleted."""
