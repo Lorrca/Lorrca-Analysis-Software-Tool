@@ -5,7 +5,6 @@ from src.utils.osmo_data_loader import load_data
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class OsmoController:
@@ -60,6 +59,12 @@ class OsmoController:
 
     def remove_elements_by_plugin_id(self, plugin_id):
         self.plot_manager.remove_elements_by_plugin_id(plugin_id)
+
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+        """Delegate the save plot operation to PlotManager."""
+        self.plot_manager.save_plot(
+            filename, width, height, dpi, x_label, y_label, title
+        )
 
     def __del__(self):
         """Clean up when the controller is deleted."""

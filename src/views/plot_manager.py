@@ -1,8 +1,20 @@
 import logging
+import os
+
 from matplotlib import pyplot as plt
 from src.models.plot_element import PlotElement
+from src.utils.plot_export_helper import save_plot_with_clone
 
 logger = logging.getLogger(__name__)
+
+# Default constants for plot settings
+DEFAULT_WIDTH = 1920
+DEFAULT_HEIGHT = 1080
+DEFAULT_DPI = 200
+DEFAULT_X_LABEL = "X Axis"
+DEFAULT_Y_LABEL = "Y Axis"
+DEFAULT_TITLE = "Plot"
+RESULTS_FOLDER = "../results"
 
 
 class PlotManager:
@@ -64,3 +76,22 @@ class PlotManager:
                 element.render(self.ax)
 
         self.ax.legend()  # Add a legend for better readability
+
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+        """Export the plot as an image with the specified parameters."""
+        try:
+            # Ensure the results folder exists
+            os.makedirs(RESULTS_FOLDER, exist_ok=True)
+
+            # Ensure the filename is stored in the results folder
+            filepath = os.path.join(RESULTS_FOLDER, filename + ".png")
+
+            # Save the plot using the helper function
+            save_plot_with_clone(self.fig, filename=filepath, width=width, height=height, dpi=dpi,
+                                 x_label=x_label, y_label=y_label, title=title
+                                 )
+
+            logger.info(f"Plot saved successfully as {filepath}")
+        except Exception as e:
+            logger.error(f"Failed to save plot: {e}")
+            raise

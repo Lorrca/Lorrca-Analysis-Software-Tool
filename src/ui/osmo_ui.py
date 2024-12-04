@@ -3,14 +3,17 @@ import logging
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, \
     QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem, QSizePolicy
+    QWidget, QStackedLayout, QListWidgetItem, QSizePolicy, QDialog, QFormLayout, QLineEdit, \
+    QMessageBox
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
+from src.views.plot_manager import DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_DPI, DEFAULT_X_LABEL, \
+    DEFAULT_Y_LABEL, DEFAULT_TITLE
+
 # Set up logging configuration
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class DragDropWidget(QFrame):
@@ -38,6 +41,73 @@ class DragDropWidget(QFrame):
             file_path = urls[0].toLocalFile()
             if file_path:
                 self.file_loaded_callback(file_path)
+
+
+class ExportDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Export Plot Settings")
+        self.layout = QFormLayout(self)
+
+        # Add form fields for export settings
+        self.filename_input = QLineEdit(self)
+        self.layout.addRow("Filename:", self.filename_input)
+
+        self.width_input = QLineEdit(str(DEFAULT_WIDTH), self)
+        self.layout.addRow("Width (pixels):", self.width_input)
+
+        self.height_input = QLineEdit(str(DEFAULT_HEIGHT), self)
+        self.layout.addRow("Height (pixels):", self.height_input)
+
+        self.dpi_input = QLineEdit(str(DEFAULT_DPI), self)
+        self.layout.addRow("DPI:", self.dpi_input)
+
+        self.x_label_input = QLineEdit(DEFAULT_X_LABEL, self)
+        self.layout.addRow("X Label:", self.x_label_input)
+
+        self.y_label_input = QLineEdit(DEFAULT_Y_LABEL, self)
+        self.layout.addRow("Y Label:", self.y_label_input)
+
+        self.title_input = QLineEdit(DEFAULT_TITLE, self)
+        self.layout.addRow("Title (required):", self.title_input)
+
+        # Add buttons
+        self.buttons_layout = QVBoxLayout()
+        self.export_button = QPushButton("Export", self)
+        self.export_button.clicked.connect(self.accept)
+        self.buttons_layout.addWidget(self.export_button)
+
+        self.cancel_button = QPushButton("Cancel", self)
+        self.cancel_button.clicked.connect(self.reject)
+        self.buttons_layout.addWidget(self.cancel_button)
+
+        self.layout.addRow(self.buttons_layout)
+
+    def get_settings(self):
+        """Return the input data as a dictionary."""
+        # Validate required fields
+        if not self.title_input.text().strip():
+            QMessageBox.critical(self, "Error", "Title is required.")
+            return None
+
+        # Validate that width, height, and dpi are integers
+        try:
+            width = int(self.width_input.text().strip())
+            height = int(self.height_input.text().strip())
+            dpi = int(self.dpi_input.text().strip())
+        except ValueError:
+            QMessageBox.critical(self, "Error", "Width, Height, and DPI must be valid integers.")
+            return None
+
+        return {
+            "filename": self.filename_input.text().strip(),
+            "width": width,
+            "height": height,
+            "dpi": dpi,
+            "x_label": self.x_label_input.text().strip(),
+            "y_label": self.y_label_input.text().strip(),
+            "title": self.title_input.text().strip()
+        }
 
 
 class OsmoUI(QWidget):
@@ -87,6 +157,7 @@ class OsmoUI(QWidget):
         # Export button
         self.export_button = QPushButton("Export", self)
         self.export_button.setEnabled(False)
+        self.export_button.clicked.connect(self.open_export_dialog)
         self.left_layout.addWidget(self.export_button)
 
         # Add left frame to the horizontal layout and set its stretch factor
@@ -215,3 +286,31 @@ class OsmoUI(QWidget):
             logger.info(f"Element {element_id} deselected.")
 
         self.update_canvas()
+
+    def open_export_dialog(self):
+        """Open the export settings dialog."""
+        dialog = ExportDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            settings = dialog.get_settings()
+            if settings is None:
+                # Log and return if validation failed in the dialog
+                logger.warning("Export settings validation failed. Dialog remains open.")
+                return
+
+            filename = settings["filename"]
+            if filename:
+                try:
+                    # Call the PlotManager's save_plot method
+                    self.controller.save_plot(
+                        filename, settings["width"], settings["height"],
+                        settings["dpi"], settings["x_label"],
+                        settings["y_label"], settings["title"]
+                    )
+                    QMessageBox.information(self, "Export Successful", f"Plot saved as {filename}")
+                    dialog.accept()  # Close the dialog after successful export
+                except Exception as e:
+                    logger.error(f"Failed to save plot: {e}")
+                    QMessageBox.critical(self, "Export Error",
+                                         "An error occurred while saving the plot.")
+            else:
+                QMessageBox.warning(self, "Filename is missing", "Please name your file")
