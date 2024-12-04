@@ -15,10 +15,11 @@ def create_new_figure_from_existing(fig):
         new_handles = []  # List to hold new handles for the legend
         for line in ax.lines:
             # Create a new line in the new axis
+            # Get the Line2D instance
             new_line = new_axs[i].plot(line.get_xdata(), line.get_ydata(), label=line.get_label(),
                                        color=line.get_color(), linestyle=line.get_linestyle(),
                                        linewidth=line.get_linewidth(), marker=line.get_marker(),
-                                       markersize=line.get_markersize())[0]  # Get the Line2D instance
+                                       markersize=line.get_markersize())[0]
             new_handles.append(new_line)
 
         new_axs[i].set_xlabel(ax.get_xlabel())
@@ -29,7 +30,8 @@ def create_new_figure_from_existing(fig):
         legend = ax.get_legend()
         if legend is not None:
             # Create a new legend in the new axis with the new handles
-            new_axs[i].legend(handles=new_handles, labels=[line.get_label() for line in ax.lines], loc='best')
+            new_axs[i].legend(handles=new_handles, labels=[line.get_label() for line in ax.lines],
+                              loc='best')
 
     return new_fig
 
