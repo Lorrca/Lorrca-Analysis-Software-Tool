@@ -1,14 +1,15 @@
+import logging
 import uuid
-from abc import abstractmethod
-from src.interfaces.plugin_interface import PluginInterface
+from abc import ABC, abstractmethod
 from src.models.plot_element import LineElement, AreaElement, ScatterElement
 
+logger = logging.getLogger(__name__)
 
-class BasePlugin(PluginInterface):
+
+class BasePlugin(ABC):
     """Base class for all plugins."""
 
     def __init__(self, model, plot_manager):
-        super().__init__(model, plot_manager)
         self.model = model
         self.plot_manager = plot_manager
         self.id = str(uuid.uuid4())
@@ -17,21 +18,21 @@ class BasePlugin(PluginInterface):
     @abstractmethod
     def plugin_name(self) -> str:
         """Property for plugin name, to be overridden by subclasses."""
-        pass  # Subclasses must implement the plugin name.
+        pass
 
-    def add_line_element(self, x: list, y: list, label: str):
+    def add_line_element(self, x: list, y: list, label: str, **kwargs):
         """Helper method to add a line plot element."""
-        element = LineElement(x, y, label, self.plugin_name, self.id)
+        element = LineElement(x, y, label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
-    def add_point_element(self, x: float, y: float, label: str):
+    def add_point_element(self, x: float, y: float, label: str, **kwargs):
         """Helper method to add a point plot element."""
-        element = ScatterElement([x], [y], label, self.plugin_name, self.id)
+        element = ScatterElement([x], [y], label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
-    def add_area_element(self, x: list, y1: list, y2: list, label: str):
+    def add_area_element(self, x: list, y1: list, y2: list, label: str, **kwargs):
         """Helper method to add an area plot element."""
-        element = AreaElement(x, y1, y2, label, self.plugin_name, self.id)
+        element = AreaElement(x, y1, y2, label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
     @abstractmethod

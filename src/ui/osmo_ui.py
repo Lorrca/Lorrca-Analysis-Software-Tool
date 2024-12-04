@@ -1,9 +1,16 @@
+import logging
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, \
+    QListWidget, QPushButton, \
+    QWidget, QStackedLayout, QListWidgetItem, QSizePolicy
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+
+# Set up logging configuration
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class DragDropWidget(QFrame):
@@ -13,7 +20,8 @@ class DragDropWidget(QFrame):
         super().__init__()
         self.file_loaded_callback = file_loaded_callback
         self.setAcceptDrops(True)
-        self.setStyleSheet("background-color: lightgray; border: 2px dashed gray;")
+        self.setStyleSheet(
+            "background-color: lightgray; border: 2px dashed gray;")
         layout = QVBoxLayout(self)
         label = QLabel("Drag and drop a file here", self)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -59,24 +67,31 @@ class OsmoUI(QWidget):
 
     def setup_main_layout(self):
         """Set up the main application layout."""
-        # Horizontal layout for main frame
+        # Horizontal layout for the main frame
         horizontal_layout = QHBoxLayout()
 
         # Left vertical layout
         left_frame = QFrame(self.main_frame)
         self.left_layout = QVBoxLayout(left_frame)
 
-        # Canvas
+        # Canvas setup
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                  QSizePolicy.Policy.Expanding)
         self.left_layout.addWidget(self.canvas)
+
+        # Make the canvas expand to fit the layout by adding a stretch factor
+        self.left_layout.setStretch(0, 1)
 
         # Export button
         self.export_button = QPushButton("Export", self)
         self.export_button.setEnabled(False)
         self.left_layout.addWidget(self.export_button)
 
-        horizontal_layout.addWidget(left_frame)
+        # Add left frame to the horizontal layout and set its stretch factor
+        horizontal_layout.addWidget(left_frame,
+                                    stretch=1)  # Set stretch factor to 1 for expansion
 
         # Right vertical layout
         right_frame = QFrame(self.main_frame)
@@ -100,8 +115,11 @@ class OsmoUI(QWidget):
         self.right_layout.addWidget(elements_label)
 
         self.elements_list = QListWidget(self)
+        self.elements_list.itemChanged.connect(
+            self.on_element_selection_changed)
         self.right_layout.addWidget(self.elements_list)
 
+        # Add right frame to the horizontal layout with a fixed size
         horizontal_layout.addWidget(right_frame)
 
         # Replace drag-and-drop widget with the main layout
@@ -112,23 +130,32 @@ class OsmoUI(QWidget):
 
     def file_loaded(self, file_path):
         """Handle file loading and initialize the main layout."""
-        print(f"File loaded: {file_path}")
-        if self.controller.load_file(file_path):  # Assume controller processes the file
+        logger.info(f"File loaded: {file_path}")
+        if self.controller.load_file(file_path):
             self.setup_main_layout()
             self.update_plugin_list()
-            self.update_canvas()
+            self.update_elements_list()
 
     def update_canvas(self):
-        """Update the canvas with a new figure."""
+        """Update the canvas with selected elements."""
         if self.figure:
-            self.figure = self.controller.get_figure()
+            # Get the list of selected element IDs
+            selected_element_ids = [
+                self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
+                for index in range(self.elements_list.count())
+                if self.elements_list.item(
+                    index).checkState() == Qt.CheckState.Checked
+            ]
+
+            # Update the figure by asking the controller for the updated canvas
+            self.figure = self.controller.get_updated_canvas(
+                selected_element_ids)
             self.canvas.figure = self.figure
             self.canvas.draw()
 
             # Enable the export button if there's visible data
             self.export_button.setEnabled(
-                any(ax.has_data() for ax in self.figure.axes)
-            )
+                any(ax.has_data() for ax in self.figure.axes))
 
     def update_plugin_list(self):
         """Update the plugin list with checkboxes."""
@@ -137,28 +164,54 @@ class OsmoUI(QWidget):
 
         for plugin in plugins:
             item = QListWidgetItem(plugin["name"])
-            item.setData(Qt.UserRole, plugin["id"])  # Store plugin ID for future use
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable checkable
-            item.setCheckState(Qt.CheckState.Unchecked)  # Default state is unchecked
+            item.setData(Qt.ItemDataRole.UserRole,
+                         plugin["id"])  # Store plugin ID for future use
+            item.setFlags(
+                item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Enable clickable
+            item.setCheckState(
+                Qt.CheckState.Unchecked)  # Default state is unchecked
             self.plugins_list.addItem(item)
 
-    def get_checked_plugins(self):
-        """Get a list of checked plugins by their IDs."""
-        checked_plugins = []
-        for index in range(self.plugins_list.count()):
-            item = self.plugins_list.item(index)
-            if item.checkState() == Qt.CheckState.Checked:
-                plugin_id = item.data(Qt.UserRole)
-                checked_plugins.append(plugin_id)
-        return checked_plugins
+    def update_elements_list(self):
+        """Update the elements list to reflect the current state."""
+        self.elements_list.clear()
+        elements = self.controller.get_all_elements()
+
+        for element_id, element in elements.items():
+            item = QListWidgetItem(f"{element.label}, {element.plugin_name}")
+            item.setData(Qt.ItemDataRole.UserRole,
+                         element_id)  # Store the element ID
+            if element.selected:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
+            self.elements_list.addItem(item)
 
     def on_plugin_selection_changed(self, item):
         """Handles the selection change in the plugin list."""
-        # Get the plugin ID from the item data
-        plugin_id = item.data(Qt.UserRole)
+        plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Get the plugin ID
 
-        # Check if the plugin is selected or deselected
         if item.checkState() == Qt.CheckState.Checked:
-            # Run the selected plugin
-            self.controller.run_plugin(
-                [plugin_id])  # Pass the list of selected plugin IDs (even if it's just one)
+            # Run the plugin and update the elements
+            self.controller.run_plugin([plugin_id])
+            self.update_elements_list()
+            self.update_canvas()  # Redraw canvas with new elements
+        else:
+            # Remove plugin elements
+            self.controller.remove_elements_by_plugin_id(
+                plugin_id)
+            self.update_elements_list()
+            self.update_canvas()  # Redraw canvas without elements of the deselected plugin
+
+    def on_element_selection_changed(self, item):
+        """Handles the selection change in the elements list."""
+        element_id = item.data(Qt.ItemDataRole.UserRole)
+
+        if item.checkState() == Qt.CheckState.Checked:
+            # Element selected
+            logger.info(f"Element {element_id} selected.")
+        else:
+            # Element deselected
+            logger.info(f"Element {element_id} deselected.")
+
+        self.update_canvas()

@@ -3,7 +3,8 @@ import logging
 import os
 from src.base_classes.base_plugin import BasePlugin
 
-PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), '../plugins')
+PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                              '../plugins')
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +34,8 @@ class PluginManager:
                                                          BasePlugin) and attr is not BasePlugin:
                     plugin_instance = attr(model, plot_manager)
                     if plugin_instance.id in self.plugins:
-                        logger.warning(f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
+                        logger.warning(
+                            f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
                         return
                     self.plugins[plugin_instance.id] = plugin_instance
                     logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
@@ -45,7 +47,9 @@ class PluginManager:
         plugin = self.plugins.get(plugin_id)
         if plugin:
             try:
+                # Run the plugin
                 plugin.run_plugin()
+
                 logger.info(f"Ran plugin: {plugin.plugin_name}")
             except Exception as e:
                 logger.error(f"Error running plugin {plugin.plugin_name}: {e}")
@@ -54,7 +58,8 @@ class PluginManager:
 
     def get_all_plugin_info(self):
         """Return a list of dictionaries containing plugin IDs and names."""
-        return [{"id": plugin.id, "name": plugin.plugin_name} for plugin in self.plugins.values()]
+        return [{"id": plugin.id, "name": plugin.plugin_name} for plugin in
+                self.plugins.values()]
 
     def get_plugin_by_id(self, plugin_id):
         """Return the plugin object by its ID."""

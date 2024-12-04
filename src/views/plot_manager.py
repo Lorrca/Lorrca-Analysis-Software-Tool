@@ -1,6 +1,8 @@
+import logging
 from matplotlib import pyplot as plt
-
 from src.models.plot_element import PlotElement
+
+logger = logging.getLogger(__name__)
 
 
 class PlotManager:
@@ -15,7 +17,8 @@ class PlotManager:
     def add_element(self, element: PlotElement):
         """Add a plot element to the manager."""
         if not isinstance(element, PlotElement):
-            raise TypeError("Only instances of PlotElement (or subclasses) can be added.")
+            raise TypeError(
+                "Only instances of PlotElement (or subclasses) can be added.")
         self.elements[element.id] = element
 
     def remove_element_by_id(self, element_id):
@@ -25,7 +28,9 @@ class PlotManager:
 
     def remove_elements_by_plugin_id(self, plugin_id):
         """Remove all plot elements associated with a given plugin ID."""
-        elements_to_remove = [element_id for element_id, element in self.elements.items() if element.plugin_id == plugin_id]
+        elements_to_remove = [element_id for element_id, element in
+                              self.elements.items() if
+                              element.plugin_id == plugin_id]
         for element_id in elements_to_remove:
             self.remove_element_by_id(element_id)
 
@@ -37,19 +42,25 @@ class PlotManager:
         """Return the dictionary of all elements."""
         return self.elements
 
-    def visualize_selected_elements(self, element_ids):
-        """Visualize elements with a plot title and axis labels."""
-        # Clear previous plot elements
-        self.ax.clear()
+    def _set_elements_state(self, selected_element_ids):
+        # Iterate through all elements and set their state
+        for element_id, element in self.get_all_elements().items():  # Corrected to iterate over items
+            if element_id in selected_element_ids:
+                element.selected = True
+            else:
+                element.selected = False
 
-        # Add the selected elements
-        for element_id in element_ids:
+    def visualize_selected_elements(self, selected_element_ids):
+        """Visualize only selected elements based on provided IDs."""
+        self.ax.clear()  # Clear previous plot elements
+
+        # Update the state of all elements
+        self._set_elements_state(selected_element_ids)
+
+        # Visualize only the elements whose IDs are in the provided list and are marked as selected
+        for element_id in selected_element_ids:
             element = self.get_element_by_id(element_id)
-            if element is None:
-                continue  # Skip if the element ID does not exist
-
-            # Render the element on the axis
-            element.render(self.ax)
+            if element and element.selected:  # Check if the element exists and is selected
+                element.render(self.ax)
 
         self.ax.legend()  # Add a legend for better readability
-        self.fig.canvas.draw()  # Redraw the canvas to reflect changes
