@@ -45,15 +45,6 @@ class OsmoController:
         logger.info(f"Retrieved plugins: {plugins_info}")
         return plugins_info
 
-    def reset_plugin(self, plugin_id):
-        """Reset a specific plugin (cleanup its internal state)."""
-        plugin = self.plugin_manager.get_plugin_by_id(plugin_id)
-        if plugin:
-            plugin.cleanup()
-            logger.info(f"Plugin {plugin_id} has been reset.")
-        else:
-            logger.warning(f"Plugin {plugin_id} not found.")
-
     def run_plugin(self, plugin_ids):
         """Run the plugin(s) with the provided plugin IDs."""
         for plugin_id in plugin_ids:
@@ -66,6 +57,9 @@ class OsmoController:
         elements = self.plot_manager.get_all_elements()
         logger.info(f"Retrieved {len(elements)} elements.")
         return elements
+
+    def remove_elements_by_plugin_id(self, plugin_id):
+        self.plot_manager.remove_elements_by_plugin_id(plugin_id)
 
     def __del__(self):
         """Clean up when the controller is deleted."""

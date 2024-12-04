@@ -20,27 +20,20 @@ class BasePlugin(ABC):
         """Property for plugin name, to be overridden by subclasses."""
         pass
 
-    def add_line_element(self, x: list, y: list, label: str):
+    def add_line_element(self, x: list, y: list, label: str, **kwargs):
         """Helper method to add a line plot element."""
-        element = LineElement(x, y, label, self.plugin_name, self.id)
+        element = LineElement(x, y, label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
-    def add_point_element(self, x: float, y: float, label: str):
+    def add_point_element(self, x: float, y: float, label: str, **kwargs):
         """Helper method to add a point plot element."""
-        element = ScatterElement([x], [y], label, self.plugin_name, self.id)
+        element = ScatterElement([x], [y], label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
-    def add_area_element(self, x: list, y1: list, y2: list, label: str):
+    def add_area_element(self, x: list, y1: list, y2: list, label: str, **kwargs):
         """Helper method to add an area plot element."""
-        element = AreaElement(x, y1, y2, label, self.plugin_name, self.id)
+        element = AreaElement(x, y1, y2, label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
-
-    def cleanup(self):
-        """Remove all elements associated with this plugin from the PlotManager."""
-        removed_count = self.plot_manager.remove_elements_by_plugin_id(self.id)
-        logger.info(
-            f"Removed {removed_count} elements for plugin {self.plugin_name}."
-        )
 
     @abstractmethod
     def run_plugin(self):
