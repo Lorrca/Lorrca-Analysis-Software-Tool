@@ -1,43 +1,31 @@
+from numpy import polyfit, polyval, linspace
 from src.base_classes.base_plugin import BasePlugin
 
 
-class OtherPlugin(BasePlugin):
+class PolynomialPlugin(BasePlugin):
     @property
     def plugin_name(self):
-        return "Other Plugin"
+        return "Polynomial Plugin"
 
     def run_plugin(self):
         """Implement the plugin's main functionality."""
-        self._raw_curve()
-        self._max_value()
-        self._area()
+        self._polynomial_curve()
 
-    def _raw_curve(self):
+    def _polynomial_curve(self):
+        """Generate and plot a polynomial curve based on the model's data."""
         raw_o_range = self.model.get_o
         raw_ei_range = self.model.get_ei
 
+        # Fit a polynomial to the data (degree 3, as an example)
+        degree = 8
+        coefficients = polyfit(raw_o_range, raw_ei_range, degree)
+
+        # Generate a smooth curve using the polynomial
+        smooth_o = linspace(min(raw_o_range), max(raw_o_range), 500)
+        smooth_ei = polyval(coefficients, smooth_o)
+
         self.add_line_element(
-            raw_o_range,
-            raw_ei_range,
-            label="Raw O vs EI"
-        )
-
-    def _max_value(self):
-        o_max = self.model.get_o_max
-        ei_max = self.model.get_ei_max
-
-        self.add_point_element(
-            o_max,
-            ei_max,
-            label="Max Value"
-        )
-
-    def _area(self):
-        _, o_segment, ei_segment = self.model.get_area
-
-        self.add_area_element(
-            x=o_segment,
-            y1=ei_segment,
-            y2=[0] * len(ei_segment),  # Baseline of 0 for the area
-            label="Area"
+            smooth_o,
+            smooth_ei,
+            label="Polynomial O vs EI",
         )
