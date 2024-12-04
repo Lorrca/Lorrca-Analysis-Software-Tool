@@ -181,8 +181,10 @@ class OsmoUI(QWidget):
             item = QListWidgetItem(f"{element.label}, {element.plugin_name}")
             item.setData(Qt.ItemDataRole.UserRole,
                          element_id)  # Store the element ID
-            item.setCheckState(
-                Qt.CheckState.Checked)  # Set initial state as selected
+            if element.selected:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
             self.elements_list.addItem(item)
 
     def on_plugin_selection_changed(self, item):

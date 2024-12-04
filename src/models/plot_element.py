@@ -10,16 +10,12 @@ class PlotElement(ABC):
         self.plugin_name = plugin_name
         self.plugin_id = plugin_id
         self.kwargs = kwargs
-        self.selected = True  # Default to selected
+        self.selected = False  # Default to deselected
 
     @abstractmethod
     def render(self, ax):
         """Subclasses must implement the render method to plot the element."""
         pass
-
-    def set_selected(self, is_selected):
-        """Set the selection state of the element."""
-        self.selected = is_selected
 
 
 # Line plot element
