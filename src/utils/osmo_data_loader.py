@@ -1,83 +1,116 @@
 import csv
 import numpy as np
-
 from src.models.osmo_model import OsmoModel
+from src.utils.data_validator import DataValidator
 
 
 def load_data(filepath: str) -> OsmoModel:
-    metadata = {}  # Initialize metadata here
+    """Load data from a CSV file and construct an OsmoModel."""
+    metadata = {}
+    data = {}
+
     try:
         with open(filepath, 'r') as file:
             csv_reader = csv.reader(file, delimiter=';')
-            headers, start_reading = initialize_reading(csv_reader, metadata)
-            data = read_data(csv_reader, headers) if start_reading else {}
 
-        # Convert lists to NumPy arrays
+            # Step 1: Initialize reading process (headers and metadata)
+            headers, start_reading = initialize_reading(csv_reader, metadata)
+
+            if not headers:
+                raise ValueError("No valid headers found in the file.")
+
+            # Step 2: Read data if initialization succeeded
+            if start_reading:
+                data = read_data(csv_reader, headers)
+
+        # Step 3: Convert lists to NumPy arrays
         data = convert_to_numpy(data)
 
+        # Step 4: Validate the data and metadata
+        if not DataValidator.validate_osmo_file(data, metadata):
+            raise ValueError("Validation failed: The loaded data or metadata is invalid.")
+
+        # Step 5: Construct and return the OsmoModel
         return OsmoModel(data, metadata)
 
     except FileNotFoundError:
         print(f"Error: The file '{filepath}' was not found.")
-        return OsmoModel({}, {})
+        raise
+    except ValueError as ve:
+        print(f"Validation Error: {ve}")
+        raise
     except Exception as e:
-        print(f"An error occurred while loading data: {e}")
-        return OsmoModel({}, {})
+        print(f"An unexpected error occurred while loading data: {e}")
+        raise
+
 
 def initialize_reading(csv_reader, metadata):
+    """Parse headers and extract metadata."""
     headers = []
     start_reading = False
 
     for row in csv_reader:
-        if extract_metadata(row, metadata):  # Pass metadata to the function
-            continue
-        elif row and row[0].strip() == "#":
-            headers = [header.strip() for header in row[1:]]  # Clean headers
-            start_reading = True  # Start reading subsequent rows
+        if not row or row[0].strip() == "":
+            continue  # Skip empty rows
+        if extract_metadata(row, metadata):
+            continue  # Process metadata rows
+        if row[0].strip() == "#":
+            headers = [header.strip() for header in row[1:]]  # Extract headers
+            start_reading = True
             break
     return headers, start_reading
 
+
 def extract_metadata(row, metadata) -> bool:
+    """Extract metadata from a given row."""
     if not row:
         return False
 
-    if "Upper limit area" in row[0] and len(row) > 1:
-        metadata["upper_limit"] = int(row[1])
-    if "Lower limit area" in row[0] and len(row) > 1:
-        metadata["lower_limit"] = int(row[1])
-    if "Date (Y-M-D)" in row[0] and len(row) > 1:
-        metadata["date"] = row[1].strip()  # Store date value
-    if "Instrument info" in row[0] and len(row) > 1:
-        metadata["instrument_info"] = row[1].strip()  # Store instrument info
-    if "Measurement ID" in row[0] and len(row) > 1:
-        metadata["measurement_id"] = row[1].strip()
-        return True
+    metadata_mappings = {
+        "Upper limit area": "upper_limit",
+        "Lower limit area": "lower_limit",
+        "Date (Y-M-D)": "date",
+        "Instrument info": "instrument_info",
+        "Measurement ID": "measurement_id",
+    }
+
+    for key, metadata_key in metadata_mappings.items():
+        if key in row[0] and len(row) > 1:
+            metadata[metadata_key] = row[1].strip() if "limit" not in key else int(row[1].strip())
+            return True
     return False
 
+
 def read_data(csv_reader, headers) -> dict:
-    data = {key: [] for key in headers}  # Initialize the dictionary
+    """Read data rows from the CSV file."""
+    data = {key: [] for key in headers}
+
     for row in csv_reader:
-        # Process data rows (skip the first column in each row)
-        if row and row[0].strip() != "#":  # Ensure we're reading actual data
-            values = row[1:]  # Skip the first index column
-            process_row(headers, values, data)
+        if not row or row[0].strip() == "#":  # Skip empty or comment rows
+            continue
+        values = row[1:]  # Skip the first column (index)
+        if len(values) != len(headers):
+            print(f"Warning: Row length mismatch. Expected {len(headers)}, got {len(values)}. Skipping row.")
+            continue
+        process_row(headers, values, data)
+
     return data
+
 
 def process_row(headers, values, data):
+    """Process a single row of data."""
     for key, value in zip(headers, values):
-        # Convert values to float, handling commas as decimal points
         try:
-            # Replace commas with dots and convert to float
-            data[key].append(float(value.replace(",", ".")))
+            data[key].append(float(value.replace(",", ".")))  # Convert numeric values
         except ValueError:
-            data[key].append(value)  # Keep non-numeric values as they are
+            data[key].append(value.strip())  # Append non-numeric values as-is
 
-def convert_to_numpy(data) -> dict:
-    # Convert lists to NumPy arrays
-    for key in data:
-        data[key] = np.array(data[key])
+
+def convert_to_numpy(data, dtype=None) -> dict:
+    """Convert lists in the data dictionary to NumPy arrays."""
+    for key, values in data.items():
+        try:
+            data[key] = np.array(values, dtype=dtype) if dtype else np.array(values)
+        except ValueError:
+            print(f"Warning: Could not convert data for key '{key}' to NumPy array. Keeping as list.")
     return data
-
-
-class OsmoDataLoader:
-    pass
