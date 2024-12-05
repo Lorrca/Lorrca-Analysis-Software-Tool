@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QTabWidget, QInputDialog
+    QTabWidget, QInputDialog, QMessageBox
 
 from src.controllers.osmo_controller import OsmoController
 from src.ui.osmo_ui import OsmoUI
@@ -60,20 +60,26 @@ class MainWindow(QMainWindow):
         osmo_ui = OsmoUI(OsmoController())
 
         osmo_tab_index = self.tabs.addTab(osmo_ui, name)
-        self.tabs.setTabToolTip(osmo_tab_index, "This is the Osmo view")
+        self.tabs.setTabToolTip(osmo_tab_index, name)
 
         self.ui_views.append(osmo_ui)
 
     def close_tab(self, index):
-        """Close the tab at the given index."""
+        """Close the tab at the given index with a confirmation dialog."""
         tab_widget = self.tabs.widget(index)
 
-        for osmo_ui in self.ui_views:
-            if osmo_ui == tab_widget:
-                self.remove_view_and_controller(osmo_ui)
-                break
+        # Check if the tab has unsaved changes and prompt for confirmation
+        reply = QMessageBox.question(self, "Confirm action",
+                                     "Are you sure you want to close this tab? Unsaved work will be deleted.",
+                                     QMessageBox.Yes | QMessageBox.No)
 
-        self.tabs.removeTab(index)
+        if reply == QMessageBox.Yes:
+            for osmo_ui in self.ui_views:
+                if osmo_ui == tab_widget:
+                    self.remove_view_and_controller(osmo_ui)
+                    break
+
+            self.tabs.removeTab(index)
 
     def remove_view_and_controller(self, osmo_ui):
         """Helper function to remove the OsmoUI view and its controller."""
