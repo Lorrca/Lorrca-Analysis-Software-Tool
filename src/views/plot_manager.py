@@ -7,13 +7,6 @@ from src.utils.plot_export_helper import save_plot_with_clone
 
 logger = logging.getLogger(__name__)
 
-# Default constants for plot settings
-DEFAULT_WIDTH = 1920
-DEFAULT_HEIGHT = 1080
-DEFAULT_DPI = 200
-DEFAULT_X_LABEL = "X Axis"
-DEFAULT_Y_LABEL = "Y Axis"
-DEFAULT_TITLE = "Plot"
 RESULTS_FOLDER = "../results"
 
 
@@ -75,7 +68,9 @@ class PlotManager:
             if element and element.selected:  # Check if the element exists and is selected
                 element.render(self.ax)
 
-        self.ax.legend()  # Add a legend for better readability
+        # Add a legend only if there are any artists in the axes
+        if self.ax.has_data():
+            self.ax.legend()  # Add a legend for better readability
 
     def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
         """Export the plot as an image with the specified parameters."""

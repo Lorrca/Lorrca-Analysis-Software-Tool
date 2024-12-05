@@ -9,8 +9,13 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-from src.views.plot_manager import DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_DPI, DEFAULT_X_LABEL, \
-    DEFAULT_Y_LABEL, DEFAULT_TITLE
+# Default constants for plot settings
+DEFAULT_WIDTH = 1920
+DEFAULT_HEIGHT = 1080
+DEFAULT_DPI = 200
+DEFAULT_X_LABEL = "X Axis"
+DEFAULT_Y_LABEL = "Y Axis"
+DEFAULT_TITLE = "Plot"
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)
@@ -19,28 +24,89 @@ logger = logging.getLogger(__name__)
 class DragDropWidget(QFrame):
     """Widget for drag-and-drop file handling."""
 
+    # Class constant for the default message
+    DEFAULT_MESSAGE = "Drag and drop a CSV file here"
+
     def __init__(self, file_loaded_callback):
         super().__init__()
         self.file_loaded_callback = file_loaded_callback
+
+        # Initial setup
         self.setAcceptDrops(True)
-        self.setStyleSheet(
-            "background-color: lightgray; border: 2px dashed gray;")
+
+        # Define styles with a border-radius for rounded edges and ensure no double border
+        self.default_style = """
+            background-color: lightgray;
+            border: 2px dashed gray;
+            border-radius: 10px;
+        """
+        self.valid_style = """
+            background-color: lightblue;
+            border: 2px dashed blue;
+            border-radius: 10px;
+        """
+        self.invalid_style = """
+            background-color: lightcoral;
+            border: 2px dashed red;
+            border-radius: 10px;
+        """
+
+        # Apply the default style
+        self.setStyleSheet(self.default_style)
+
+        # Layout and label setup
         layout = QVBoxLayout(self)
-        label = QLabel("Drag and drop a file here", self)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
+        self.message_label = QLabel(self.DEFAULT_MESSAGE, self)
+        self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.message_label)
         self.setLayout(layout)
 
     def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle the drag enter event."""
         if event.mimeData().hasUrls():
-            event.acceptProposedAction()
+            urls = event.mimeData().urls()
+            # Check if any URL is a CSV file
+            if any(url.toLocalFile().lower().endswith('.csv') for url in urls):
+                event.acceptProposedAction()
+                self.setStyleSheet(self.valid_style)
+                self.message_label.setText("Release to load the CSV file")
+            else:
+                event.acceptProposedAction()
+                self.setStyleSheet(self.invalid_style)
+                self.message_label.setText("Unsupported extension. Please use a CSV file.")
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        """Handle the drag leave event."""
+        # Reset style and message when dragging leaves the widget
+        self.setStyleSheet(self.default_style)
+        self.message_label.setText(self.DEFAULT_MESSAGE)
 
     def dropEvent(self, event: QDropEvent):
+        """Handle the drop event."""
+        # Reset style and message on drop
+        self.setStyleSheet(self.default_style)
+        self.message_label.setText(self.DEFAULT_MESSAGE)
+
         urls = event.mimeData().urls()
         if urls:
             file_path = urls[0].toLocalFile()
-            if file_path:
-                self.file_loaded_callback(file_path)
+            if file_path.lower().endswith('.csv'):  # Proceed only if true
+                try:
+                    # Call the file loading callback and check the return value
+                    if self.file_loaded_callback(file_path):
+                        self.message_label.setText("File loaded successfully!")
+                    else:
+                        self.message_label.setText(
+                            "File loading failed. Please check the file format.")
+                        self.setStyleSheet(self.invalid_style)
+                except Exception as e:
+                    self.message_label.setText(f"Error loading file: {e}")
+                    self.setStyleSheet(self.invalid_style)
+            else:
+                self.setStyleSheet(self.invalid_style)
+                self.message_label.setText("Invalid file type. Please drop a CSV file.")
 
 
 class ExportDialog(QDialog):
