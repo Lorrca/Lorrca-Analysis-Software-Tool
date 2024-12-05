@@ -1,7 +1,7 @@
 import logging
 from src.controllers.plugin_manager import PluginManager
 from src.views.plot_manager import PlotManager
-from src.utils.osmo_data_loader import load_data
+from src.models.osmo_data_loader import load_data
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)

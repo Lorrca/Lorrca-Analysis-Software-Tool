@@ -27,7 +27,8 @@ def load_data(filepath: str) -> OsmoModel:
         data = convert_to_numpy(data)
 
         # Step 4: Validate the data and metadata
-        if not DataValidator.validate_osmo_file(data, metadata):
+        required_data_keys = {"A", "SdA", "B", "SdB", "Eof", "O.", "EI", "SdEI"}
+        if not DataValidator.validate_file(data, metadata, required_data_keys):
             raise ValueError("Validation failed: The loaded data or metadata is invalid.")
 
         # Step 5: Construct and return the OsmoModel
@@ -90,7 +91,8 @@ def read_data(csv_reader, headers) -> dict:
             continue
         values = row[1:]  # Skip the first column (index)
         if len(values) != len(headers):
-            print(f"Warning: Row length mismatch. Expected {len(headers)}, got {len(values)}. Skipping row.")
+            print(
+                f"Warning: Row length mismatch. Expected {len(headers)}, got {len(values)}. Skipping row.")
             continue
         process_row(headers, values, data)
 
@@ -112,5 +114,6 @@ def convert_to_numpy(data, dtype=None) -> dict:
         try:
             data[key] = np.array(values, dtype=dtype) if dtype else np.array(values)
         except ValueError:
-            print(f"Warning: Could not convert data for key '{key}' to NumPy array. Keeping as list.")
+            print(
+                f"Warning: Could not convert data for key '{key}' to NumPy array. Keeping as list.")
     return data

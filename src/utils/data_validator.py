@@ -3,8 +3,8 @@ import numpy as np
 
 class DataValidator:
     @staticmethod
-    def validate_osmo_file(data: dict[str, np.ndarray], metadata: dict) -> bool:
-        required_data_keys = {"A", "SdA", "B", "SdB", "Eof", "O.", "EI", "SdEI"}
+    def validate_file(data: dict[str, np.ndarray], metadata: dict, data_keys: set[str]) -> bool:
+        required_data_keys = data_keys
         if not isinstance(data, dict) or not isinstance(metadata, dict):
             print("Validation Error: Data and metadata must be dictionaries.")
             return False
