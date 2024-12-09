@@ -19,3 +19,16 @@ class OsmoModel:
         if item in self.metadata:
             return self.metadata[item]
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
+
+    def __hash__(self):
+        """Hash the model using its data and metadata."""
+        data_hashable = tuple((k, tuple(v)) for k, v in self.data.items())
+        metadata_hashable = tuple(self.metadata.items())
+        return hash((data_hashable, metadata_hashable))
+
+    def __eq__(self, other):
+        """Check equality of two OsmoModel instances."""
+        if not isinstance(other, OsmoModel):
+            return False
+
+        return (self.data == other.data) and (self.metadata == other.metadata)

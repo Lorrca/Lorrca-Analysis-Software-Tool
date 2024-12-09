@@ -1,5 +1,6 @@
 import logging
 from src.controllers.plugin_manager import PluginManager
+from src.models.model_container import ModelContainer
 from src.views.plot_manager import PlotManager
 from src.models.osmo_data_loader import load_data
 
@@ -9,18 +10,23 @@ logger = logging.getLogger(__name__)
 
 class OsmoController:
     def __init__(self):
-        self.model = None
+        self.model_container = ModelContainer()  # Store models and sets
         self.plot_manager = PlotManager()
         self.plugin_manager = PluginManager()
 
     def load_file(self, file_path):
-        """Load the file and initialize the model."""
-        self.model = load_data(file_path)
-        if self.model is not None:
-            logger.info(f"File loaded successfully: {file_path}")
+        """Load a file and add it to the container as a single model."""
+        try:
+            model = load_data(file_path)
+            self.model_container.add_model(model)  # Add as a single model
+            self.model_container.add_model({model})
+            self.model_container.add_model({model})
+            logger.info(f"File loaded and stored as a single model: {file_path}")
+            self.model_container.print_all_models()
             return True
-        logger.error(f"Failed to load file: {file_path}")
-        return False
+        except Exception as e:
+            logger.error(f"Failed to load file: {file_path}. Error: {e}")
+            return False
 
     def get_updated_canvas(self, selected_element_ids):
         """Ask PlotManager to visualize only selected elements and return the canvas."""
@@ -30,13 +36,9 @@ class OsmoController:
 
     def get_plugins(self):
         """Retrieve the list of discovered plugins, including their IDs."""
-        if self.model is None:
-            logger.warning("No model is loaded. Cannot retrieve plugins.")
-            return []
-
-        if not self.plugin_manager.plugins:  # Check if plugins are already loaded
+        if not self.plugin_manager.plugins:
             logger.info("Loading plugins...")
-            self.plugin_manager.load_plugins(self.model, self.plot_manager)
+            self.plugin_manager.load_plugins(self.model_container.get_single_model(), self.plot_manager)
         else:
             logger.info("Plugins already loaded.")
 
