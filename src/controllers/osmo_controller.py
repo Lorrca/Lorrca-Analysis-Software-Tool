@@ -1,8 +1,8 @@
 import logging
+
 from src.controllers.plugin_manager import PluginManager
 from src.models.model_container import ModelContainer
 from src.views.plot_manager import PlotManager
-from src.models.osmo_data_loader import load_data
 
 # Set up logging configuration
 logger = logging.getLogger(__name__)
@@ -14,18 +14,23 @@ class OsmoController:
         self.plot_manager = PlotManager()
         self.plugin_manager = PluginManager()
 
-    def load_file(self, file_path):
-        """Load a file and add it to the container as a single model."""
+    def load_files(self, file_paths, batch=False):
+        """Load files and delegate storage to the container, handling batch or individual processing."""
         try:
-            model = load_data(file_path)
-            self.model_container.add_model(model)  # Add as a single model
-            self.model_container.add_model({model})
-            self.model_container.add_model({model})
-            logger.info(f"File loaded and stored as a single model: {file_path}")
+            if batch:
+                # Process as a batch
+                self.model_container.load_files(file_paths, batch=True)
+                logger.info(f"Batch of {len(file_paths)} files successfully processed.")
+            else:
+                # Process each file individually
+                self.model_container.load_files(file_paths, batch=False)
+                logger.info(f"{len(file_paths)} files successfully processed individually.")
+
+            # Print all models after loading
             self.model_container.print_all_models()
             return True
         except Exception as e:
-            logger.error(f"Failed to load file: {file_path}. Error: {e}")
+            logger.error(f"Error during loading files: {e}")
             return False
 
     def get_updated_canvas(self, selected_element_ids):
@@ -38,7 +43,7 @@ class OsmoController:
         """Retrieve the list of discovered plugins, including their IDs."""
         if not self.plugin_manager.plugins:
             logger.info("Loading plugins...")
-            self.plugin_manager.load_plugins(self.model_container.get_single_model(), self.plot_manager)
+            self.plugin_manager.load_plugins(self.model_container, self.plot_manager)
         else:
             logger.info("Plugins already loaded.")
 
