@@ -84,14 +84,7 @@ class DragDropWidget(QFrame):
             csv_files = self._collect_csv_files(file_paths)
 
             if csv_files:
-                choice = self._ask_batch_preference()
-
-                if choice == "separate":
-                    # Process files separately (single files)
-                    self.load_files_callback(csv_files, batch=False)
-                elif choice == "batch":
-                    # Process files as a batch
-                    self.load_files_callback(csv_files, batch=True)
+                self.load_files_callback(csv_files, batch=False)
 
             self.setStyleSheet(self.default_style)
             self.message_label.setText(self.DEFAULT_MESSAGE)
@@ -411,3 +404,7 @@ class OsmoUI(QWidget):
                                          "An error occurred while saving the plot.")
             else:
                 QMessageBox.warning(self, "Filename is missing", "Please name your file")
+
+    def cleanup(self):
+        print("Cleaning up OsmoUI and its controller...")
+        self.controller = None
