@@ -76,12 +76,6 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             for osmo_ui in self.ui_views:
                 if osmo_ui == tab_widget:
-                    self.remove_view_and_controller(osmo_ui)
+                    osmo_ui.cleanup()
+                    self.tabs.removeTab(index)
                     break
-
-            self.tabs.removeTab(index)
-
-    def remove_view_and_controller(self, osmo_ui):
-        """Helper function to remove the OsmoUI view and its controller."""
-        self.ui_views.remove(osmo_ui)
-        osmo_ui.deleteLater()
