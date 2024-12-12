@@ -8,8 +8,9 @@ class RawCurve(BasePlugin):
     def plugin_name(self):
         return "Dataclass Raw Plugin"
 
-    def run_plugin(self):
+    def run_plugin(self, model):
         """Main entry point for the plugin."""
+        self.model = model
         self.raw_o_vs_ei_curve()
         self.highest_point()
 

@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 class BasePlugin(ABC):
     """Base class for all plugins."""
 
-    def __init__(self, model, plot_manager):
-        self.model = model
+    def __init__(self, plot_manager):
+        self.model = None
         self.plot_manager = plot_manager
         self.id = str(uuid.uuid4())
 
@@ -36,6 +36,6 @@ class BasePlugin(ABC):
         self.plot_manager.add_element(element)
 
     @abstractmethod
-    def run_plugin(self):
+    def run_plugin(self, model):
         """Method to be implemented by subclasses for plugin-specific logic."""
         pass
