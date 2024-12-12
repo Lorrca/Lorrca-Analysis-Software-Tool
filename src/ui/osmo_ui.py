@@ -1,11 +1,12 @@
 import logging
+import os
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, \
     QListWidget, QPushButton, \
     QWidget, QStackedLayout, QListWidgetItem, QSizePolicy, QDialog, QFormLayout, QLineEdit, \
     QMessageBox
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QDragLeaveEvent
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
@@ -22,19 +23,16 @@ logger = logging.getLogger(__name__)
 
 
 class DragDropWidget(QFrame):
-    """Widget for drag-and-drop file handling."""
+    """Widget for drag-and-drop file or folder handling."""
 
-    # Class constant for the default message
-    DEFAULT_MESSAGE = "Drag and drop a CSV file here"
+    DEFAULT_MESSAGE = "Drag and drop a CSV file or folder here"
 
-    def __init__(self, file_loaded_callback):
+    def __init__(self, load_files_callback):
         super().__init__()
-        self.file_loaded_callback = file_loaded_callback
+        self.load_files_callback = load_files_callback
 
-        # Initial setup
         self.setAcceptDrops(True)
 
-        # Define styles with a border-radius for rounded edges and ensure no double border
         self.default_style = """
             background-color: lightgray;
             border: 2px dashed gray;
@@ -51,10 +49,8 @@ class DragDropWidget(QFrame):
             border-radius: 10px;
         """
 
-        # Apply the default style
         self.setStyleSheet(self.default_style)
 
-        # Layout and label setup
         layout = QVBoxLayout(self)
         self.message_label = QLabel(self.DEFAULT_MESSAGE, self)
         self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -65,48 +61,75 @@ class DragDropWidget(QFrame):
         """Handle the drag enter event."""
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            # Check if any URL is a CSV file
-            if any(url.toLocalFile().lower().endswith('.csv') for url in urls):
+            if self._are_valid_paths(urls):
                 event.acceptProposedAction()
                 self.setStyleSheet(self.valid_style)
-                self.message_label.setText("Release to load the CSV file")
+                self.message_label.setText("Release to load CSV file(s) or folder(s)")
             else:
                 event.acceptProposedAction()
                 self.setStyleSheet(self.invalid_style)
-                self.message_label.setText("Unsupported extension. Please use a CSV file.")
+                self.message_label.setText("Unsupported file type. Only CSV files are allowed.")
         else:
             event.ignore()
 
-    def dragLeaveEvent(self, event):
-        """Handle the drag leave event."""
-        # Reset style and message when dragging leaves the widget
+    def dragLeaveEvent(self, event: QDragLeaveEvent):
+        """Reset style when the drag leaves the widget."""
         self.setStyleSheet(self.default_style)
         self.message_label.setText(self.DEFAULT_MESSAGE)
 
     def dropEvent(self, event: QDropEvent):
         """Handle the drop event."""
-        # Reset style and message on drop
-        self.setStyleSheet(self.default_style)
-        self.message_label.setText(self.DEFAULT_MESSAGE)
+        if event.mimeData().hasUrls():
+            file_paths = [url.toLocalFile() for url in event.mimeData().urls()]
+            csv_files = self._collect_csv_files(file_paths)
 
-        urls = event.mimeData().urls()
-        if urls:
-            file_path = urls[0].toLocalFile()
-            if file_path.lower().endswith('.csv'):  # Proceed only if true
-                try:
-                    # Call the file loading callback and check the return value
-                    if self.file_loaded_callback(file_path):
-                        self.message_label.setText("File loaded successfully!")
-                    else:
-                        self.message_label.setText(
-                            "File loading failed. Please check the file format.")
-                        self.setStyleSheet(self.invalid_style)
-                except Exception as e:
-                    self.message_label.setText(f"Error loading file: {e}")
-                    self.setStyleSheet(self.invalid_style)
+            if csv_files:
+                self.load_files_callback(csv_files, batch=False)
+
+            self.setStyleSheet(self.default_style)
+            self.message_label.setText(self.DEFAULT_MESSAGE)
+
+    @staticmethod
+    def _are_valid_paths(urls):
+        """Check if all URLs are valid CSV files or folders."""
+        for url in urls:
+            path = url.toLocalFile()
+            if os.path.isdir(path):
+                continue
+            elif os.path.isfile(path) and path.lower().endswith('.csv'):
+                continue
             else:
-                self.setStyleSheet(self.invalid_style)
-                self.message_label.setText("Invalid file type. Please drop a CSV file.")
+                return False
+        return True
+
+    @staticmethod
+    def _collect_csv_files(paths):
+        """Recursively collect all CSV files from given paths."""
+        csv_files = []
+        for path in paths:
+            if os.path.isfile(path) and path.lower().endswith('.csv'):
+                csv_files.append(path)
+            elif os.path.isdir(path):
+                for root, _, files in os.walk(path):
+                    csv_files.extend(
+                        os.path.join(root, file) for file in files if file.lower().endswith('.csv')
+                    )
+        return csv_files
+
+    def _ask_batch_preference(self):
+        """Prompt the user to choose between separate or batch processing."""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Batch Processing")
+        msg_box.setText("How would you like to process the files?")
+        separate_button = msg_box.addButton("Store separately", QMessageBox.ButtonRole.AcceptRole)
+        batch_button = msg_box.addButton("Batch measurement", QMessageBox.ButtonRole.ActionRole)
+        msg_box.exec()
+
+        if msg_box.clickedButton() == separate_button:
+            return "separate"
+        elif msg_box.clickedButton() == batch_button:
+            return "batch"
+        return None
 
 
 class ExportDialog(QDialog):
@@ -188,7 +211,7 @@ class OsmoUI(QWidget):
         self.setLayout(self.main_layout)
 
         # Drag-and-drop widget as the initial content
-        self.drag_drop_widget = DragDropWidget(self.file_loaded)
+        self.drag_drop_widget = DragDropWidget(self.load_files)
         self.main_frame_layout = QStackedLayout(self.main_frame)
         self.main_frame_layout.addWidget(self.drag_drop_widget)
 
@@ -265,13 +288,14 @@ class OsmoUI(QWidget):
         self.main_frame_layout.addWidget(main_widget)
         self.main_frame_layout.setCurrentWidget(main_widget)
 
-    def file_loaded(self, file_path):
-        """Handle file loading and initialize the main layout."""
-        logger.info(f"File loaded: {file_path}")
-        if self.controller.load_file(file_path):
+    def load_files(self, file_paths, batch=False):
+        """Handles file loading based on batch or single file processing."""
+        if self.controller.load_files(file_paths, batch=batch):
             self.setup_main_layout()
             self.update_plugin_list()
             self.update_elements_list()
+        else:
+            logger.error("Error loading files.")
 
     def update_canvas(self):
         """Update the canvas with selected elements."""
@@ -380,3 +404,7 @@ class OsmoUI(QWidget):
                                          "An error occurred while saving the plot.")
             else:
                 QMessageBox.warning(self, "Filename is missing", "Please name your file")
+
+    def cleanup(self):
+        print("Cleaning up OsmoUI and its controller...")
+        self.controller = None
