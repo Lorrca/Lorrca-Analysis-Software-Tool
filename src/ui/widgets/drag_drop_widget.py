@@ -63,7 +63,7 @@ class DragDropWidget(QFrame):
             csv_files = self._collect_csv_files(file_paths)
 
             if csv_files:
-                self.load_files_callback(csv_files, batch=False)
+                self.load_files_callback(csv_files)
 
             self.setStyleSheet(self.default_style)
             self.message_label.setText(self.DEFAULT_MESSAGE)

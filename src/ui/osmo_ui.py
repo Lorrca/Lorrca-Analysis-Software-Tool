@@ -77,8 +77,8 @@ class OsmoUI(QWidget):
         self.main_frame_layout.addWidget(main_widget)
         self.main_frame_layout.setCurrentWidget(main_widget)
 
-    def load_files(self, file_paths, batch=False):
-        if self.controller.load_files(file_paths, batch=batch):
+    def load_files(self, file_paths):
+        if self.controller.load_files(file_paths):
             self.setup_main_layout()
             self.update_plugin_list()
             self.update_elements_list()
@@ -129,7 +129,7 @@ class OsmoUI(QWidget):
             self.update_elements_list()
             self.update_canvas()
 
-    def on_element_selection_changed(self, item):
+    def on_element_selection_changed(self):
         self.update_canvas()
 
     def open_export_dialog(self):

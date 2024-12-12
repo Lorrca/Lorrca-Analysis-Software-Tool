@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
+import uuid
 
 
 @dataclass
@@ -7,6 +8,7 @@ class OsmoModel:
     """Data container for osmo data and metadata."""
     data: dict[str, np.ndarray]
     metadata: dict
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))  # Automatically assign an ID
 
     def __getattr__(self, item):
         # Convert attribute-like access for osmo_data keys
@@ -32,3 +34,7 @@ class OsmoModel:
             return False
 
         return (self.data == other.data) and (self.metadata == other.metadata)
+
+    def __repr__(self):
+        return f"OsmoModel(ID = {self.id}, Measurement ID = {self.measurement_id})"
+

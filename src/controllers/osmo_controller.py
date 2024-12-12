@@ -12,19 +12,14 @@ class OsmoController:
     def __init__(self):
         self.model_container = ModelContainer()  # Store models and sets
         self.plot_manager = PlotManager()
-        self.plugin_manager = PluginManager()
+        self.plugin_manager = PluginManager(self.model_container)
 
-    def load_files(self, file_paths, batch=False):
+    def load_files(self, file_paths):
         """Load files and delegate storage to the container, handling batch or individual processing."""
         try:
-            if batch:
-                # Process as a batch
-                self.model_container.load_files(file_paths, batch=True)
-                logger.info(f"Batch of {len(file_paths)} files successfully processed.")
-            else:
-                # Process each file individually
-                self.model_container.load_files(file_paths, batch=False)
-                logger.info(f"{len(file_paths)} files successfully processed individually.")
+            # Process each file individually
+            self.model_container.load_files(file_paths)
+            logger.info(f"{len(file_paths)} files successfully processed individually.")
 
             # Print all models after loading
             self.model_container.print_all_models()
@@ -43,7 +38,7 @@ class OsmoController:
         """Retrieve the list of discovered plugins, including their IDs."""
         if not self.plugin_manager.plugins:
             logger.info("Loading plugins...")
-            self.plugin_manager.load_plugins(self.model_container, self.plot_manager)
+            self.plugin_manager.load_plugins(self.plot_manager)
         else:
             logger.info("Plugins already loaded.")
 
@@ -52,9 +47,13 @@ class OsmoController:
         return plugins_info
 
     def run_plugin(self, plugin_ids):
+
+        models = self.model_container.get_all_single_models()
+        models_ids = [model.id for model in models]
+
         """Run the plugin(s) with the provided plugin IDs."""
         for plugin_id in plugin_ids:
-            self.plugin_manager.run_plugin(plugin_id)
+            self.plugin_manager.run_plugin(plugin_id, models_ids)
             logger.info(
                 f"Ran plugin {plugin_id}. Elements after running: {self.plot_manager.get_all_elements()}")
 

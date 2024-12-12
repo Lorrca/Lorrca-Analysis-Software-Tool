@@ -7,14 +7,16 @@ class PolynomialPlugin(BasePlugin):
     def plugin_name(self):
         return "Polynomial Plugin"
 
-    def run_plugin(self):
+    def run_plugin(self, model):
         """Implement the plugin's main functionality."""
+        self.model = model
+
         self._polynomial_curve()
 
     def _polynomial_curve(self):
         """Generate and plot a polynomial curve based on the model's data."""
-        raw_o_range = self.model.get_o
-        raw_ei_range = self.model.get_ei
+        raw_o_range = self.model.O
+        raw_ei_range = self.model.EI
 
         # Fit a polynomial to the data (degree 3, as an example)
         degree = 8
