@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
     QTabWidget, QInputDialog, QMessageBox
 
-from src.controllers.osmo_controller import OsmoController
+from src.controllers.view_controller import ViewController
 from src.ui.osmo_ui import OsmoUI
 
 
@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         if not name and ok:
             name = "Osmo"
 
-        osmo_ui = OsmoUI(OsmoController())
+        osmo_ui = OsmoUI(ViewController())
 
         osmo_tab_index = self.tabs.addTab(osmo_ui, name)
         self.tabs.setTabToolTip(osmo_tab_index, name)
