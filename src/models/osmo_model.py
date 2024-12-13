@@ -1,40 +1,18 @@
-from dataclasses import dataclass, field
-import numpy as np
-import uuid
+from dataclasses import dataclass
+
+from src.base_classes.base_scan_model import BaseScanModel
 
 
-@dataclass
-class OsmoModel:
-    """Data container for osmo data and metadata."""
-    data: dict[str, np.ndarray]
-    metadata: dict
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))  # Automatically assign an ID
+@dataclass(eq=False)
+class OsmoModel(BaseScanModel):
+    """Data container for Osmo data and metadata."""
 
     def __getattr__(self, item):
         # Convert attribute-like access for osmo_data keys
-        if item in self.data:
-            return self.data[item]
-        # Explicitly map non-standard keys like "O."
+
         if item == "O":
             return self.data["O."]
-        # Check osmo_metadata as fallback
-        if item in self.metadata:
-            return self.metadata[item]
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
-
-    def __hash__(self):
-        """Hash the model using its data and metadata."""
-        data_hashable = tuple((k, tuple(v)) for k, v in self.data.items())
-        metadata_hashable = tuple(self.metadata.items())
-        return hash((data_hashable, metadata_hashable))
-
-    def __eq__(self, other):
-        """Check equality of two OsmoModel instances."""
-        if not isinstance(other, OsmoModel):
-            return False
-
-        return (self.data == other.data) and (self.metadata == other.metadata)
+        return super().__getattr__(item)
 
     def __repr__(self):
-        return f"OsmoModel(ID = {self.id}, Measurement ID = {self.measurement_id})"
-
+        return f"OsmoModel: ID = {self.id}, Measurement ID = {self.measurement_id}"
