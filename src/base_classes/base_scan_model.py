@@ -44,3 +44,7 @@ class BaseScanModel:
             return False
 
         return True
+
+    def __repr__(self):
+        """Base representation for Model printing."""
+        return f"{self.__class__.__name__}(id={self.id})"

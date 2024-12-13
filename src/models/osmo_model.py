@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from src.base_classes.base_scan_model import BaseScanModel
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, repr=False)
 class OsmoModel(BaseScanModel):
     """Data container for Osmo data and metadata."""
 
@@ -13,6 +13,3 @@ class OsmoModel(BaseScanModel):
         if item == "O":
             return self.data["O."]
         return super().__getattr__(item)
-
-    def __repr__(self):
-        return f"OsmoModel: ID = {self.id}, Measurement ID = {self.measurement_id}"
