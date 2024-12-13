@@ -8,7 +8,7 @@ from src.views.plot_manager import PlotManager
 logger = logging.getLogger(__name__)
 
 
-class OsmoController:
+class ViewController:
     def __init__(self):
         self.model_container = ModelContainer()  # Store models and sets
         self.plot_manager = PlotManager()
@@ -19,7 +19,6 @@ class OsmoController:
         try:
             # Process each file individually
             self.model_container.load_files(file_paths)
-            logger.info(f"{len(file_paths)} files successfully processed individually.")
 
             # Print all models after loading
             self.model_container.print_all_models()

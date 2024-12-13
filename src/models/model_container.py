@@ -1,28 +1,52 @@
 import logging
-from dataclasses import dataclass, field
-from typing import Set, List, Union, Dict
+from typing import Set, List, Union
 
+from src.base_classes.base_scan_model import BaseScanModel
 from src.models.osmo_model import OsmoModel
-from src.models.osmo_data_loader import load_data
+from src.models.osmo_data_loader import OsmoDataLoader
+from src.models.oxy_data_loader import OxyDataLoader
+from src.models.oxy_model import OxyModel
+from src.utils.file_reader_helper import FileHelper
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class ModelContainer:
     """Container for managing and storing models."""
-    single_models: Set[OsmoModel] = field(
-        default_factory=set)  # Store models directly (no need for ids)
-    model_sets: Dict[str, Set[OsmoModel]] = field(
-        default_factory=dict)  # Sets of models by batch ID
 
-    def load_file(self, file_path: str):
-        """Load a single file and add it to the container."""
-        model = self._load_data(file_path)
-        if model:
-            self._add_single_model(model)
-        else:
-            logger.warning(f"Failed to load model from file: {file_path}")
+    # Define a registry for the data loaders
+    data_loader_registry = {
+        "osmo": OsmoDataLoader(),
+        "oxy": OxyDataLoader()
+    }
+
+    def __init__(self):
+        self.loader = None  # This will store the current loader instance (e.g., OsmoDataLoader)
+        self.single_models: Set[BaseScanModel] = set()  # Initially can hold any model type
+        self.model_type = None  # Will be set after the first model is loaded
+
+    def determine_loader(self, file_path: str):
+        """Determine the appropriate loader for the file."""
+        if self.loader:
+            return self.loader
+
+        try:
+            headers = FileHelper.peek_headers(file_path)
+
+            # Select the loader based on the file headers
+            if "O." in headers:
+                self.loader = self.data_loader_registry["osmo"]
+                self.model_type = OsmoModel
+                return self.loader
+            elif "pO2" in headers:
+                self.loader = self.data_loader_registry["oxy"]
+                self.model_type = OxyModel
+                return self.loader
+
+            raise ValueError(f"No appropriate loader found for the given file: {file_path}")
+        except Exception as e:
+            logger.error(f"Error determining loader for file {file_path}: {e}")
+            raise
 
     def load_files(self, file_paths: List[str]):
         """Load multiple files and add them to the container."""
@@ -36,21 +60,28 @@ class ModelContainer:
 
             self.single_models.update(models)
 
-    @staticmethod
-    def _load_data(file_path: str) -> Union[OsmoModel, None]:
-        """Simulated method to load model data from a file path."""
+    def _load_data(self, file_path: str) -> Union[BaseScanModel, None]:
+        """Dynamically determine the loader and load the data."""
         try:
-            return load_data(file_path)
+            loader = self.determine_loader(file_path)
+            model = loader.load_data(file_path)
+
+            # Ensure the model matches the expected type for the container
+            if self.model_type and not isinstance(model, self.model_type):
+                raise TypeError(
+                    f"Loaded model type '{type(model)}' does not match expected type '{self.model_type}'")
+
+            return model
         except Exception as e:
             logger.error(f"Error loading data from {file_path}: {e}")
             return None
 
-    def _add_single_model(self, model: OsmoModel):
+    def _add_single_model(self, model):
         """Store a single model."""
         self.single_models.add(model)  # No need to use a dictionary, just add to the set
         logger.info(f"Single model added with ID: {model.id}")
 
-    def get_single_model_by_id(self, model_id: str) -> Union[OsmoModel, None]:
+    def get_single_model_by_id(self, model_id: str):
         """Retrieve a single model by its ID."""
         return next((model for model in self.single_models if model.id == model_id), None)
 
@@ -59,14 +90,7 @@ class ModelContainer:
 
     def print_all_models(self):
         """Print all models stored in the container."""
-        print("Single Models:")
-        for model in self.single_models:
-            print(
-                f"ID: {model.id}, Measurement ID: {model.metadata.get('measurement_id', 'No Measurement ID')}")
-
-        # Only print model sets if they exist
-        if self.model_sets:
-            print("\nModel Sets:")
-            for batch_id, model_set in self.model_sets.items():
-                print(
-                    f"Batch ID: {batch_id}, Models: {[m.metadata.get('measurement_id', 'No Measurement ID') for m in model_set]}")
+        if self.single_models:
+            print("Single Models:")
+            for model in self.single_models:
+                print(model)
