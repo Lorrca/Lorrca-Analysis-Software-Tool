@@ -6,7 +6,7 @@ from src.utils.data_validator import DataValidator
 class OsmoDataLoader(BaseDataLoader):
     """Reader for Osmo measurement files."""
 
-    REQUIRED_DATA_KEYS = {"A", "SdA", "B", "SdB", "EoF", "O.", "EI", "SdEI"}
+    REQUIRED_DATA_KEYS = {"A", "SdA", "B", "SdB", "Eof", "O.", "EI", "SdEI"}
 
     def extract_metadata(self, row, meta_data) -> bool:
         """Specialized metadata extraction for osmo files."""
