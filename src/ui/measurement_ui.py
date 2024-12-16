@@ -2,7 +2,7 @@ import logging
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem, QSizePolicy, QDialog
+    QWidget, QStackedLayout, QListWidgetItem, QDialog
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
@@ -12,10 +12,10 @@ from src.ui.widgets.export_dialog import ExportDialog
 logger = logging.getLogger(__name__)
 
 
-class OsmoUI(QWidget):
-    def __init__(self, osmo_controller):
+class MeasurementUI(QWidget):
+    def __init__(self, controller):
         super().__init__()
-        self.controller = osmo_controller
+        self.controller = controller
 
         self.main_frame = QFrame(self)
         self.main_layout = QHBoxLayout(self)
@@ -41,7 +41,7 @@ class OsmoUI(QWidget):
         self.left_layout = QVBoxLayout(left_frame)
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
-        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         self.left_layout.addWidget(self.canvas)
 
         self.export_button = QPushButton("Export", self)
@@ -94,6 +94,8 @@ class OsmoUI(QWidget):
             ]
             self.figure = self.controller.get_updated_canvas(selected_element_ids)
             self.canvas.figure = self.figure
+            width, height = self.canvas.size().width(), self.canvas.size().height()
+            self.canvas.figure.set_size_inches(width / 80, height / 80)
             self.canvas.draw()
             self.export_button.setEnabled(any(ax.has_data() for ax in self.figure.axes))
 
@@ -148,3 +150,9 @@ class OsmoUI(QWidget):
     def cleanup(self):
         """Detach controller from the view."""
         self.controller = None
+
+    def _resize_figure_to_canvas(self, event=None):
+        # Adjust figure size to match the canvas size (in inches, using dpi)
+        width, height = self.canvas.size().width(), self.canvas.size().height()
+        self.figure.set_size_inches(width / 100, height / 100)
+        self.canvas.draw()
