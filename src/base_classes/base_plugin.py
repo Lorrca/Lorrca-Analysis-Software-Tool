@@ -32,6 +32,7 @@ class BasePlugin(ABC):
 
     def add_area_element(self, x: list, y1: list, y2: list, label: str, **kwargs):
         """Helper method to add an area plot element."""
+        kwargs.setdefault("alpha", 0.5)  # Set default alpha to 0.5 if not provided
         element = AreaElement(x, y1, y2, label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
