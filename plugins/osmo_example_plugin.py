@@ -3,17 +3,13 @@ from scipy.signal import find_peaks
 
 from src.base_classes.base_plugin import BasePlugin
 
-import time
 
 class OsmoExamplePlugin(BasePlugin):
-    total = None
     @property
     def plugin_name(self):
         return "Osmo Example Plugin"
 
     def run_plugin(self, model):
-        t0 = time.time()
-
         self.model = model
         o = self.model.O
         ei = self.model.EI
@@ -37,10 +33,6 @@ class OsmoExamplePlugin(BasePlugin):
 
         area, o_segment, ei_segment = self._calculate_area(o, ei, self.model.lower_limit,
                                                            self.model.upper_limit)
-
-        t1 = time.time()
-        total = t1-t0
-        print(total)
 
         # Draw elements
         self.draw_raw(o, ei)
