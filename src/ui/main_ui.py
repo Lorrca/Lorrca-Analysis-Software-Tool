@@ -6,13 +6,12 @@ from src.ui.measurement_ui import MeasurementUI
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, main_controller):
+    def __init__(self):
         super().__init__()
 
         self.tabs = None
         self.create_view_button = None
 
-        self.controller = main_controller
         self.ui_views = []  # List to store UI instances (views)
 
         self.setWindowTitle("L.A.S.T")

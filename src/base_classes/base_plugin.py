@@ -9,6 +9,8 @@ from src.models.plot_element import LineElement, AreaElement, ScatterElement
 
 logger = logging.getLogger(__name__)
 
+UnionList = Union[list, np.ndarray]
+
 
 class BasePlugin(ABC):
     """Base class for all plugins."""
@@ -24,7 +26,7 @@ class BasePlugin(ABC):
         """Property for plugin name, to be overridden by subclasses."""
         pass
 
-    def add_line_element(self, x: Union[list, np.ndarray], y: Union[list, np.ndarray], label: str,
+    def add_line_element(self, x: UnionList, y: UnionList, label: str,
                          **kwargs):
         """Helper method to add a line plot element."""
         element = LineElement(x, y, label, self.plugin_name, self.id, **kwargs)
@@ -35,8 +37,8 @@ class BasePlugin(ABC):
         element = ScatterElement([x], [y], label, self.plugin_name, self.id, **kwargs)
         self.plot_manager.add_element(element)
 
-    def add_area_element(self, x: Union[list, np.ndarray], y1: Union[list, np.ndarray],
-                         y2: Union[list, np.ndarray], label: str, **kwargs):
+    def add_area_element(self, x: UnionList, y1: UnionList,
+                         y2: UnionList, label: str, **kwargs):
         """Helper method to add an area plot element."""
         kwargs.setdefault("alpha", 0.5)  # Set default alpha to 0.5 if not provided
         element = AreaElement(x, y1, y2, label, self.plugin_name, self.id, **kwargs)
