@@ -26,8 +26,4 @@ class PolynomialPlugin(BasePlugin):
         smooth_o = linspace(min(raw_o_range), max(raw_o_range), 500)
         smooth_ei = polyval(coefficients, smooth_o)
 
-        self.add_line_element(
-            smooth_o,
-            smooth_ei,
-            label="Polynomial O vs EI",
-        )
+        self.add_line_element(smooth_o, smooth_ei, label="Polynomial O vs EI")

@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from dataclasses import dataclass, field
 import numpy as np
 import uuid
@@ -11,7 +10,6 @@ class BaseScanModel:
     metadata: dict
     id: str = field(default_factory=lambda: str(uuid.uuid4()))  # Automatically assign an ID
 
-    @abstractmethod
     def __getattr__(self, item):
         # Convert attribute-like access for data keys
         if item in self.data:
@@ -29,15 +27,16 @@ class BaseScanModel:
 
     def __eq__(self, other):
         """Check equality of two BaseModel instances."""
-        if not isinstance(other, BaseScanModel):
+        if isinstance(other, BaseScanModel):
             return False
 
         # Compare data dictionaries, using numpy's array_equal to compare arrays
         if self.data.keys() != other.data.keys():
             return False
-        for key, value in self.data.items():
-            if not np.array_equal(value, other.data[key]):
-                return False
+
+        # Check whether any of the arrays are not equal.
+        if any(not np.array_equal(value, other.data[key]) for key, value in self.data.items()):
+            return False
 
         # Compare metadata dictionaries
         if self.metadata != other.metadata:

@@ -72,5 +72,5 @@ class ViewController:
         )
 
     def __del__(self):
-        """Clean up when the controller is deleted."""
+        """Notify when the controller is deleted."""
         logger.info(f"Controller {self} deleted.")

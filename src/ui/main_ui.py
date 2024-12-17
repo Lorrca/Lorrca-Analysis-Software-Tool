@@ -2,19 +2,17 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QP
     QTabWidget, QInputDialog, QMessageBox
 
 from src.controllers.view_controller import ViewController
-from src.ui.osmo_ui import OsmoUI
+from src.ui.measurement_ui import MeasurementUI
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, main_controller):
+    def __init__(self):
         super().__init__()
 
         self.tabs = None
-        self.create_oxy_button = None
-        self.create_osmo_button = None
+        self.create_view_button = None
 
-        self.controller = main_controller
-        self.ui_views = []  # List to store OsmoUI instances (views)
+        self.ui_views = []  # List to store UI instances (views)
 
         self.setWindowTitle("L.A.S.T")
         self.setGeometry(100, 100, 800, 600)
@@ -29,13 +27,11 @@ class MainWindow(QMainWindow):
         central_layout = QVBoxLayout(central_widget)
 
         # Buttons to create a new Osmo or Oxy Scan
-        self.create_osmo_button = QPushButton("Create New Osmo", self)
-        self.create_oxy_button = QPushButton("Create New Oxy Scan", self)
+        self.create_view_button = QPushButton("Create New View", self)
 
         # Add buttons to the central layout
         button_layout = QHBoxLayout()
-        button_layout.addWidget(self.create_osmo_button)
-        button_layout.addWidget(self.create_oxy_button)
+        button_layout.addWidget(self.create_view_button)
         central_layout.addLayout(button_layout)
 
         # Tab widget
@@ -48,34 +44,44 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         # Connect buttons
-        self.create_osmo_button.clicked.connect(self.create_osmo_tab)
+        self.create_view_button.clicked.connect(self.create_tab)
         self.tabs.tabCloseRequested.connect(self.close_tab)
 
-    def create_osmo_tab(self):
-        """Create a new tab with an OsmoUI."""
-        name, ok = QInputDialog.getText(self, "Tab Name", "Enter a name for the Osmo tab:")
-        if not name and ok:
-            name = "Osmo"
+    def create_tab(self):
+        """Create a new tab."""
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle("Tab Name")
+        dialog.setLabelText("Enter a name for the tab:")
+        dialog.setTextValue("New Measurement")  # Set placeholder text
+        dialog.setOkButtonText("Create")
+        dialog.setCancelButtonText("Cancel")
 
-        osmo_ui = OsmoUI(ViewController())
+        if dialog.exec():
+            name = dialog.textValue() or "New Measurement"
 
-        osmo_tab_index = self.tabs.addTab(osmo_ui, name)
-        self.tabs.setTabToolTip(osmo_tab_index, name)
+            ui_instance = MeasurementUI(ViewController())
 
-        self.ui_views.append(osmo_ui)
+            tab_index = self.tabs.addTab(ui_instance, name)
+            self.tabs.setTabToolTip(tab_index, name)
+
+            self.ui_views.append(ui_instance)
 
     def close_tab(self, index):
         """Close the tab at the given index with a confirmation dialog."""
         tab_widget = self.tabs.widget(index)
 
-        # Check if the tab has unsaved changes and prompt for confirmation
-        reply = QMessageBox.question(self, "Confirm action",
-                                     "Are you sure you want to close this tab? Unsaved work will be deleted.",
-                                     QMessageBox.Yes | QMessageBox.No)
+        # Prompt for confirmation
+        reply = QMessageBox.question(
+            self,
+            "Close Tab Confirmation",
+            "Closing this tab will discard any unsaved results. Are you sure you want to proceed?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
 
-        if reply == QMessageBox.Yes:
-            for osmo_ui in self.ui_views:
-                if osmo_ui == tab_widget:
-                    osmo_ui.cleanup()
-                    self.tabs.removeTab(index)
-                    break
+        if reply == QMessageBox.StandardButton.Yes:
+            # Ensure cleanup of associated UI resources
+            if tab_widget in self.ui_views:
+                tab_widget.cleanup()
+                self.ui_views.remove(tab_widget)
+
+            self.tabs.removeTab(index)
