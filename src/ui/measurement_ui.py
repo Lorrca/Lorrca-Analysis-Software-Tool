@@ -2,8 +2,7 @@ import logging
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem, QDialog
-from matplotlib.figure import Figure
+    QWidget, QStackedLayout, QListWidgetItem, QDialog, QMessageBox
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 from src.ui.widgets.drag_drop_widget import DragDropWidget
@@ -28,7 +27,6 @@ class MeasurementUI(QWidget):
 
         self.left_layout = None
         self.right_layout = None
-        self.figure = None
         self.canvas = None
         self.plugins_list = None
         self.elements_list = None
@@ -39,8 +37,7 @@ class MeasurementUI(QWidget):
 
         left_frame = QFrame(self.main_frame)
         self.left_layout = QVBoxLayout(left_frame)
-        self.figure = Figure()
-        self.canvas = FigureCanvas(self.figure)
+        self.canvas = FigureCanvas()
 
         self.left_layout.addWidget(self.canvas)
 
@@ -86,18 +83,16 @@ class MeasurementUI(QWidget):
             logger.error("Error loading files.")
 
     def update_canvas(self):
-        if self.figure:
-            selected_element_ids = [
-                self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
-                for index in range(self.elements_list.count())
-                if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
-            ]
-            self.figure = self.controller.get_updated_canvas(selected_element_ids)
-            self.canvas.figure = self.figure
-            width, height = self.canvas.size().width(), self.canvas.size().height()
-            self.canvas.figure.set_size_inches(width / 80, height / 80)
-            self.canvas.draw()
-            self.export_button.setEnabled(any(ax.has_data() for ax in self.figure.axes))
+        selected_element_ids = [
+            self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
+            for index in range(self.elements_list.count())
+            if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
+        ]
+        self.canvas.figure = self.controller.get_updated_canvas(selected_element_ids)
+        width, height = self.canvas.size().width(), self.canvas.size().height()
+        self.canvas.figure.set_size_inches(width / 80, height / 80)
+        self.canvas.draw()
+        self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
     def update_plugin_list(self):
         plugins = self.controller.get_plugins()
@@ -135,24 +130,40 @@ class MeasurementUI(QWidget):
         self.update_canvas()
 
     def open_export_dialog(self):
+        """Open the export settings dialog."""
         dialog = ExportDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            settings = dialog.get_settings()
-            if settings:
-                if self.controller.export_image(
-                        settings["filename"], self.figure, settings["width"],
-                        settings["height"], settings["dpi"], settings["x_label"],
-                        settings["y_label"], settings["title"]):
-                    logger.info(f"Image successfully saved to {settings['filename']}")
+        while True:  # Infinite loop until export is successful or user cancels
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                settings = dialog.get_settings()
+                if settings is None:
+                    # Log and return if validation failed in the dialog
+                    logger.warning("Export settings validation failed. Dialog remains open.")
+                    continue  # Keep the dialog open to let the user correct their input
+
+                filename = settings.get("filename", "")
+                if filename:
+                    try:
+                        # Call the PlotManager's save_plot method
+                        self.controller.save_plot(
+                            filename, settings["width"], settings["height"],
+                            settings["dpi"], settings["x_label"],
+                            settings["y_label"], settings["title"]
+                        )
+                        QMessageBox.information(self, "Export Successful",
+                                                f"Plot saved as {filename}")
+                        dialog.accept()  # Close the dialog after successful export
+                        break  # Exit the loop after a successful export
+                    except Exception as e:
+                        logger.error(f"Failed to save plot: {e}")
+                        QMessageBox.critical(self, "Export Error",
+                                             f"An error occurred while saving the plot: {e}")
+                        # Dialog remains open for the user to try again
                 else:
-                    logger.error("Export failed.")
+                    QMessageBox.warning(self, "Filename is missing", "Please name your file")
+                    # Dialog remains open for the user to enter a valid filename
+            else:
+                break  # Exit if the user cancels the dialog
 
     def cleanup(self):
         """Detach controller from the view."""
         self.controller = None
-
-    def _resize_figure_to_canvas(self, event=None):
-        # Adjust figure size to match the canvas size (in inches, using dpi)
-        width, height = self.canvas.size().width(), self.canvas.size().height()
-        self.figure.set_size_inches(width / 100, height / 100)
-        self.canvas.draw()
