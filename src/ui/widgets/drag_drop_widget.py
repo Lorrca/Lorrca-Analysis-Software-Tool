@@ -1,7 +1,8 @@
-import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QDragLeaveEvent
+
+from src.utils.file_reader_helper import FileHelper as Helper
 
 
 class DragDropWidget(QFrame):
@@ -42,7 +43,7 @@ class DragDropWidget(QFrame):
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            if self._are_valid_paths(urls):
+            if Helper.are_valid_paths(urls):
                 event.acceptProposedAction()
                 self.setStyleSheet(self.valid_style)
                 self.message_label.setText("Release to load CSV file(s) or folder(s)")
@@ -60,7 +61,7 @@ class DragDropWidget(QFrame):
     def dropEvent(self, event: QDropEvent):
         if event.mimeData().hasUrls():
             file_paths = [url.toLocalFile() for url in event.mimeData().urls()]
-            csv_files = self._collect_csv_files(file_paths)
+            csv_files = Helper.collect_csv_files(file_paths)
 
             if csv_files:
                 self.load_files_callback(csv_files)
@@ -68,27 +69,4 @@ class DragDropWidget(QFrame):
             self.setStyleSheet(self.default_style)
             self.message_label.setText(self.DEFAULT_MESSAGE)
 
-    @staticmethod
-    def _are_valid_paths(urls):
-        for url in urls:
-            path = url.toLocalFile()
-            if os.path.isdir(path):
-                continue
-            elif os.path.isfile(path) and path.lower().endswith('.csv'):
-                continue
-            else:
-                return False
-        return True
 
-    @staticmethod
-    def _collect_csv_files(paths):
-        csv_files = []
-        for path in paths:
-            if os.path.isfile(path) and path.lower().endswith('.csv'):
-                csv_files.append(path)
-            elif os.path.isdir(path):
-                for root, _, files in os.walk(path):
-                    csv_files.extend(
-                        os.path.join(root, file) for file in files if file.lower().endswith('.csv')
-                    )
-        return csv_files
