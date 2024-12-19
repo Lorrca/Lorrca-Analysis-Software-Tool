@@ -9,14 +9,14 @@ DEFAULT_TITLE = "Plot"
 
 
 class ExportDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, x_label=DEFAULT_X_LABEL, y_label=DEFAULT_Y_LABEL, title=DEFAULT_TITLE):
         super().__init__(parent)
         self.setWindowTitle("Export Plot Settings")
         self.layout = QFormLayout(self)
 
         # Add form fields for export settings
-        self.filename_input = QLineEdit(self)
-        self.layout.addRow("Filename:", self.filename_input)
+        self.filename_input = QLineEdit(title, self) # Set to title as default value
+        self.layout.addRow("Filename (required):", self.filename_input)
 
         self.width_input = QLineEdit(str(DEFAULT_WIDTH), self)
         self.layout.addRow("Width (pixels):", self.width_input)
@@ -27,14 +27,15 @@ class ExportDialog(QDialog):
         self.dpi_input = QLineEdit(str(DEFAULT_DPI), self)
         self.layout.addRow("DPI:", self.dpi_input)
 
-        self.x_label_input = QLineEdit(DEFAULT_X_LABEL, self)
+        # Pre-fill the axis labels and title fields, fall back to defaults if not provided
+        self.x_label_input = QLineEdit(x_label, self)
         self.layout.addRow("X Label:", self.x_label_input)
 
-        self.y_label_input = QLineEdit(DEFAULT_Y_LABEL, self)
+        self.y_label_input = QLineEdit(y_label, self)
         self.layout.addRow("Y Label:", self.y_label_input)
 
-        self.title_input = QLineEdit(DEFAULT_TITLE, self)
-        self.layout.addRow("Title (required):", self.title_input)
+        self.title_input = QLineEdit(title, self)
+        self.layout.addRow("Title:", self.title_input)
 
         # Add buttons
         self.buttons_layout = QVBoxLayout()
@@ -49,27 +50,32 @@ class ExportDialog(QDialog):
         self.layout.addRow(self.buttons_layout)
 
     def get_settings(self):
-        """Return the input data as a dictionary."""
-        # Validate required fields
-        if not self.title_input.text().strip():
-            QMessageBox.critical(self, "Error", "Title is required.")
-            return None
-
+        """Return the input data as a dictionary with defaults as fallbacks."""
         # Validate that width, height, and dpi are integers
         try:
-            width = int(self.width_input.text().strip())
-            height = int(self.height_input.text().strip())
-            dpi = int(self.dpi_input.text().strip())
+            width = int(
+                self.width_input.text().strip()) if self.width_input.text().strip() else DEFAULT_WIDTH
+            height = int(
+                self.height_input.text().strip()) if self.height_input.text().strip() else DEFAULT_HEIGHT
+            dpi = int(
+                self.dpi_input.text().strip()) if self.dpi_input.text().strip() else DEFAULT_DPI
         except ValueError:
             QMessageBox.critical(self, "Error", "Width, Height, and DPI must be valid integers.")
             return None
 
+        # Use defaults if optional fields are empty
+        filename = self.filename_input.text().strip() or DEFAULT_TITLE
+        x_label = self.x_label_input.text().strip() or DEFAULT_X_LABEL
+        y_label = self.y_label_input.text().strip() or DEFAULT_Y_LABEL
+        title = self.title_input.text().strip() or DEFAULT_TITLE
+
         return {
-            "filename": self.filename_input.text().strip(),
+            "filename": filename,
             "width": width,
             "height": height,
             "dpi": dpi,
-            "x_label": self.x_label_input.text().strip(),
-            "y_label": self.y_label_input.text().strip(),
-            "title": self.title_input.text().strip()
+            "x_label": x_label,
+            "y_label": y_label,
+            "title": title
         }
+
