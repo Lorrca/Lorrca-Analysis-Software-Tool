@@ -15,6 +15,7 @@ class PlotManager:
         """Initialize an empty dictionary to store plot elements."""
         self.elements = {}  # Store plot elements by their unique ID
         self.fig, self.ax = plt.subplots()  # Initialize the figure and axis for plotting
+        plt.ion()  # Enable interactive mode
 
     def get_figure(self):
         """Return the figure object for external manipulation."""
@@ -51,9 +52,14 @@ class PlotManager:
         """Return all elements in the manager."""
         return self.elements
 
-    def visualize_selected_elements(self, selected_element_ids):
-        """Visualize only selected elements based on provided IDs."""
+    def visualize_selected_elements(self, selected_element_ids, x_label, y_label, title):
+        """Visualize all selected elements."""
         self.ax.clear()  # Clear previous plot elements
+
+        # Set the axis labels and title again after clearing
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel(y_label)
+        self.ax.set_title(title)
 
         # Visualize only the selected elements
         for element_id in selected_element_ids:
