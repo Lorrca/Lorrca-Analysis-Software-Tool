@@ -14,6 +14,7 @@ class ExportDialog(QDialog):
         self.setWindowTitle("Export Plot Settings")
         self.layout = QFormLayout(self)
 
+        # Add form fields for export settings
         self.filename_input = QLineEdit(self)
         self.layout.addRow("Filename:", self.filename_input)
 
@@ -35,6 +36,7 @@ class ExportDialog(QDialog):
         self.title_input = QLineEdit(DEFAULT_TITLE, self)
         self.layout.addRow("Title (required):", self.title_input)
 
+        # Add buttons
         self.buttons_layout = QVBoxLayout()
         self.export_button = QPushButton("Export", self)
         self.export_button.clicked.connect(self.accept)
@@ -47,10 +49,13 @@ class ExportDialog(QDialog):
         self.layout.addRow(self.buttons_layout)
 
     def get_settings(self):
+        """Return the input data as a dictionary."""
+        # Validate required fields
         if not self.title_input.text().strip():
             QMessageBox.critical(self, "Error", "Title is required.")
             return None
 
+        # Validate that width, height, and dpi are integers
         try:
             width = int(self.width_input.text().strip())
             height = int(self.height_input.text().strip())

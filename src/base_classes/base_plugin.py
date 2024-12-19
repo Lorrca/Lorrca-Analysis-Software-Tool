@@ -29,19 +29,20 @@ class BasePlugin(ABC):
     def add_line_element(self, x: UnionList, y: UnionList, label: str,
                          **kwargs):
         """Helper method to add a line plot element."""
-        element = LineElement(x, y, label, self.plugin_name, self.id, **kwargs)
+        element = LineElement(x, y, label, self, self.model, **kwargs)
         self.plot_manager.add_element(element)
 
     def add_point_element(self, x: float, y: float, label: str, **kwargs):
         """Helper method to add a point plot element."""
-        element = ScatterElement([x], [y], label, self.plugin_name, self.id, **kwargs)
+        element = ScatterElement([x], [y], label, self, self.model,
+                                 **kwargs)
         self.plot_manager.add_element(element)
 
     def add_area_element(self, x: UnionList, y1: UnionList,
                          y2: UnionList, label: str, **kwargs):
         """Helper method to add an area plot element."""
         kwargs.setdefault("alpha", 0.5)  # Set default alpha to 0.5 if not provided
-        element = AreaElement(x, y1, y2, label, self.plugin_name, self.id, **kwargs)
+        element = AreaElement(x, y1, y2, label, self, self.model, **kwargs)
         self.plot_manager.add_element(element)
 
     @abstractmethod

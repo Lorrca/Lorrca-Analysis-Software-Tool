@@ -4,24 +4,43 @@ from abc import ABC, abstractmethod
 
 # Base class for plot elements
 class PlotElement(ABC):
-    def __init__(self, label: str, plugin_name: str, plugin_id, **kwargs):
+    def __init__(self, label: str, plugin, model, **kwargs):
         self.id = str(uuid.uuid4())  # Generate a unique ID for each element
         self.label = label
-        self.plugin_name = plugin_name
-        self.plugin_id = plugin_id
+        self.plugin = plugin
+        self.model = model
         self.kwargs = kwargs
-        self.selected = False  # Default to deselected
 
     @abstractmethod
     def render(self, ax):
         """Subclasses must implement the render method to plot the element."""
         pass
 
+    @property
+    def model_name(self):
+        """Return the name of the model."""
+        return self.model.name if self.model else "Unknown Model"
+
+    @property
+    def plugin_name(self):
+        """Return the name of the plugin."""
+        return self.plugin.name
+
+    @property
+    def model_id(self):
+        """Return the name of the model."""
+        return self.model.id
+
+    @property
+    def plugin_id(self):
+        """Return the name of the plugin."""
+        return self.plugin.id
+
 
 # Line plot element
 class LineElement(PlotElement):
-    def __init__(self, x, y, label, plugin_name, plugin_id, **kwargs):
-        super().__init__(label, plugin_name, plugin_id, **kwargs)
+    def __init__(self, x, y, label, plugin, model, **kwargs):
+        super().__init__(label, plugin, model, **kwargs)
         self.x = x
         self.y = y
 
@@ -31,8 +50,8 @@ class LineElement(PlotElement):
 
 # Area plot element
 class AreaElement(PlotElement):
-    def __init__(self, x, y1, y2, label, plugin_name, plugin_id, **kwargs):
-        super().__init__(label, plugin_name, plugin_id, **kwargs)
+    def __init__(self, x, y1, y2, label, plugin, model, **kwargs):
+        super().__init__(label, plugin, model, **kwargs)
         self.x = x
         self.y1 = y1
         self.y2 = y2
@@ -44,8 +63,8 @@ class AreaElement(PlotElement):
 
 # Scatter plot element
 class ScatterElement(PlotElement):
-    def __init__(self, x, y, label, plugin_name, plugin_id, **kwargs):
-        super().__init__(label, plugin_name, plugin_id, **kwargs)
+    def __init__(self, x, y, label, plugin, model, **kwargs):
+        super().__init__(label, plugin, model, **kwargs)
         self.x = x
         self.y = y
 

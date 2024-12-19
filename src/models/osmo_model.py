@@ -12,4 +12,6 @@ class OsmoModel(BaseScanModel):
 
         if item == "O":
             return self.data["O."]
+        elif item == "name":
+            return self.metadata["measurement_id"]
         return super().__getattr__(item)
