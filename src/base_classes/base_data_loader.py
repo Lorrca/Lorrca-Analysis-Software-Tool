@@ -3,12 +3,11 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+from src.utils.file_reader_helper import FileHelper as Helper
+
 
 class BaseDataLoader(ABC):
     """Base class for reading measurement files."""
-
-    def __init__(self, delimiter=';'):
-        self.delimiter = delimiter
 
     def load_data(self, filepath: str):
         """Load data from a measurement file."""
@@ -18,7 +17,11 @@ class BaseDataLoader(ABC):
 
         try:
             with open(filepath, 'r') as file:
-                csv_reader = csv.reader(file, delimiter=self.delimiter)
+                # Detect delimiter
+                delimiter = Helper.detect_delimiter(file)
+                file.seek(0)  # Reset file pointer after detection
+
+                csv_reader = csv.reader(file, delimiter=delimiter)
 
                 # Step 1: Extract metadata
                 headers, start_reading = self.initialize_reading(csv_reader, metadata)
