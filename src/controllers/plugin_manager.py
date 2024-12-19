@@ -68,6 +68,17 @@ class PluginManager:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
 
     def analyze_model(self, model_id):
+        """
+        Analyzes the specified model by running all available plugins on it.
+
+        Args:
+        model_id (str): The unique identifier of the model to be analyzed.
+
+        Logs:
+            - Information on the successful execution of plugins.
+            - Warnings if the model is not found.
+            - Errors if a plugin fails during execution.
+        """
         try:
             model = self.model_container.get_model_by_id(model_id)
             if not model:
