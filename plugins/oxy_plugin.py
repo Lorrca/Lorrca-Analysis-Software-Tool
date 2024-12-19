@@ -1,5 +1,3 @@
-import numpy as np
-
 from src.base_classes.base_plugin import BasePlugin
 
 
@@ -18,4 +16,3 @@ class OxyPlugin(BasePlugin):
         ei = self.model.EI
 
         self.add_line_element(po2, ei, label="pO2 vs EI")
-
