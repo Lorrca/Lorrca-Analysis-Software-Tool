@@ -7,6 +7,9 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 from src.ui.widgets.drag_drop_widget import DragDropWidget
 from src.ui.widgets.export_dialog import ExportDialog
+from src.ui.widgets.models_list_widget import ModelsListWidget
+
+from src.utils.file_reader_helper import FileHelper as Helper
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +24,14 @@ class MeasurementUI(QWidget):
         self.main_layout.addWidget(self.main_frame)
         self.setLayout(self.main_layout)
 
-        self.drag_drop_widget = DragDropWidget(self.load_files)
+        self.drag_drop_widget = DragDropWidget(self.load_files)  # Existing drag and drop widget
         self.main_frame_layout = QStackedLayout(self.main_frame)
         self.main_frame_layout.addWidget(self.drag_drop_widget)
 
         self.left_layout = None
         self.right_layout = None
         self.canvas = None
-        self.plugins_list = None
+        self.models_list = None
         self.elements_list = None
         self.export_button = None
 
@@ -50,22 +53,21 @@ class MeasurementUI(QWidget):
         right_frame = QFrame(self.main_frame)
         self.right_layout = QVBoxLayout(right_frame)
 
-        plugins_label = QLabel("Plugins", self)
-        self.right_layout.addWidget(plugins_label)
+        models_label = QLabel("Models", self)
+        self.right_layout.addWidget(models_label)
 
-        self.plugins_list = QListWidget(self)
-        self.plugins_list.itemChanged.connect(self.on_plugin_selection_changed)
-        self.right_layout.addWidget(self.plugins_list)
-
-        refresh_button = QPushButton("Refresh Plugins", self)
-        refresh_button.clicked.connect(self.update_plugin_list)
-        self.right_layout.addWidget(refresh_button)
+        # Use ModelsListWidget here
+        self.models_list = ModelsListWidget(self)
+        self.models_list.fileDropped.connect(self.on_files_dropped)  # Handle dropped files
+        self.models_list.itemChanged.connect(
+            self.on_model_selection_changed)  # Connect to item change
+        self.right_layout.addWidget(self.models_list)
 
         elements_label = QLabel("Elements", self)
         self.right_layout.addWidget(elements_label)
 
         self.elements_list = QListWidget(self)
-        self.elements_list.itemChanged.connect(self.on_element_selection_changed)
+        self.elements_list.itemChanged.connect(self.update_canvas)
         self.right_layout.addWidget(self.elements_list)
 
         horizontal_layout.addWidget(right_frame)
@@ -77,73 +79,93 @@ class MeasurementUI(QWidget):
     def load_files(self, file_paths):
         if self.controller.load_files(file_paths):
             self.setup_main_layout()
-            self.update_plugin_list()
+            self.update_model_list()
             self.update_elements_list()
         else:
             logger.error("Error loading files.")
 
     def update_canvas(self):
-        selected_element_ids = [
+        selected_elements_ids = [
             self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
             for index in range(self.elements_list.count())
             if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
         ]
-        self.canvas.figure = self.controller.get_updated_canvas(selected_element_ids)
+        self.canvas.figure = self.controller.get_updated_canvas(selected_elements_ids)
         width, height = self.canvas.size().width(), self.canvas.size().height()
         self.canvas.figure.set_size_inches(width / 80, height / 80)
         self.canvas.draw()
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
-    def update_plugin_list(self):
-        plugins = self.controller.get_plugins()
-        self.plugins_list.clear()
+    def update_model_list(self):
+        models = self.controller.get_all_models_with_selection()
+        self.models_list.clear()
 
-        for plugin in plugins:
-            item = QListWidgetItem(plugin["name"])
-            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])
+        for model_id, measurement_id, selected in models:
+            item = QListWidgetItem(measurement_id)
+            item.setData(Qt.ItemDataRole.UserRole, model_id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
-            self.plugins_list.addItem(item)
+            item.setCheckState(Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
+            self.models_list.addItem(item)
 
     def update_elements_list(self):
-        self.elements_list.clear()
+        # Store current selection states in a dictionary
+        current_selections = {
+            self.elements_list.item(index).data(Qt.ItemDataRole.UserRole):
+                self.elements_list.item(index).checkState() == Qt.CheckState.Checked
+            for index in range(self.elements_list.count())
+        }
+
+        # Clear the list
         elements = self.controller.get_all_elements()
-        for element_id, element in elements.items():
-            item = QListWidgetItem(f"{element.label}, {element.plugin_name}")
+        self.elements_list.clear()
+
+        # Create a list of tuples with element data (ID, label, plugin_name, model_name)
+        element_data = [
+            (element_id, element.label, element.plugin.plugin_name, element.model.name)
+            for element_id, element in elements.items()
+        ]
+
+        # Rebuild the list and reapply previous selections
+        for element_id, label, plugin_name, model_name in element_data:
+            item = QListWidgetItem(f"| {label} | Plugin: {plugin_name} | Model: {model_name} |")
             item.setData(Qt.ItemDataRole.UserRole, element_id)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            # Apply the stored selection state or default to unchecked
             item.setCheckState(
-                Qt.CheckState.Checked if element.selected else Qt.CheckState.Unchecked)
+                Qt.CheckState.Checked if current_selections.get(element_id,
+                                                                False) else Qt.CheckState.Unchecked
+            )
             self.elements_list.addItem(item)
 
-    def on_plugin_selection_changed(self, item):
-        plugin_id = item.data(Qt.ItemDataRole.UserRole)
-        if item.checkState() == Qt.CheckState.Checked:
-            self.controller.run_plugin([plugin_id])
-            self.update_elements_list()
-            self.update_canvas()
-        else:
-            self.controller.remove_elements_by_plugin_id(plugin_id)
-            self.update_elements_list()
-            self.update_canvas()
-
-    def on_element_selection_changed(self):
+    def on_model_selection_changed(self, item):
+        """Handle model selection changes."""
+        model_id = item.data(Qt.ItemDataRole.UserRole)
+        checked = item.checkState() == Qt.CheckState.Checked
+        self.controller.update_model_selection(model_id, checked)
+        self.update_elements_list()
         self.update_canvas()
 
+    def on_files_dropped(self, file_paths):
+        """Handle files dropped onto the models list."""
+        csv_files = Helper.collect_csv_files(file_paths)  # Collect valid CSV files
+        if csv_files:
+            print("CSV Files Dropped:", csv_files)
+            self.controller.load_files(csv_files)  # Process dropped files
+            self.update_model_list()  # Refresh model list after loading files
+        else:
+            print("No valid CSV files found.")  # Log invalid files
+
     def open_export_dialog(self):
-        """Open the export settings dialog."""
         dialog = ExportDialog(self)
-        while True:  # Infinite loop until export is successful or user cancels
+        while True:
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 settings = dialog.get_settings()
                 if settings is None:
-                    # Log and return if validation failed in the dialog
                     logger.warning("Export settings validation failed. Dialog remains open.")
-                    continue  # Keep the dialog open to let the user correct their input
-
+                    continue
                 filename = settings.get("filename", "")
                 if filename:
                     try:
-                        # Call the PlotManager's save_plot method
                         self.controller.save_plot(
                             filename, settings["width"], settings["height"],
                             settings["dpi"], settings["x_label"],
@@ -151,18 +173,16 @@ class MeasurementUI(QWidget):
                         )
                         QMessageBox.information(self, "Export Successful",
                                                 f"Plot saved as {filename}")
-                        dialog.accept()  # Close the dialog after successful export
-                        break  # Exit the loop after a successful export
+                        dialog.accept()
+                        break
                     except Exception as e:
                         logger.error(f"Failed to save plot: {e}")
                         QMessageBox.critical(self, "Export Error",
                                              f"An error occurred while saving the plot: {e}")
-                        # Dialog remains open for the user to try again
                 else:
                     QMessageBox.warning(self, "Filename is missing", "Please name your file")
-                    # Dialog remains open for the user to enter a valid filename
             else:
-                break  # Exit if the user cancels the dialog
+                break
 
     def cleanup(self):
         """Detach controller from the view."""
