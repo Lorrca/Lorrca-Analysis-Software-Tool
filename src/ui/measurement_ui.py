@@ -1,9 +1,9 @@
 import logging
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
     QWidget, QStackedLayout, QListWidgetItem, QDialog, QMessageBox
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 from src.ui.widgets.drag_drop_widget import DragDropWidget
 from src.ui.widgets.export_dialog import ExportDialog
@@ -34,22 +34,35 @@ class MeasurementUI(QWidget):
         self.models_list = None
         self.elements_list = None
         self.export_button = None
+        self.toolbar = None
 
     def setup_main_layout(self):
         horizontal_layout = QHBoxLayout()
 
+        # Left Frame (Canvas and Export Button)
         left_frame = QFrame(self.main_frame)
         self.left_layout = QVBoxLayout(left_frame)
-        self.canvas = FigureCanvas()
 
+        # Create the canvas for the plot
+        self.canvas = FigureCanvas(
+            self.controller.get_updated_canvas([], "", "", ""))  # Initialize with an empty canvas
+
+        # Create a navigation toolbar for interactivity (zoom, pan, etc.)
+        self.toolbar = NavigationToolbar2QT(self.canvas, self)
+
+        # Add the toolbar and canvas to the layout
+        self.left_layout.addWidget(self.toolbar)
         self.left_layout.addWidget(self.canvas)
 
+        # Add export button
         self.export_button = QPushButton("Export", self)
         self.export_button.setEnabled(False)
         self.export_button.clicked.connect(self.open_export_dialog)
         self.left_layout.addWidget(self.export_button)
+
         horizontal_layout.addWidget(left_frame, stretch=1)
 
+        # Right Frame (Models and Elements List)
         right_frame = QFrame(self.main_frame)
         self.right_layout = QVBoxLayout(right_frame)
 
@@ -77,6 +90,7 @@ class MeasurementUI(QWidget):
         self.main_frame_layout.setCurrentWidget(main_widget)
 
     def load_files(self, file_paths):
+        """Load files and delegate storage to the controller."""
         if self.controller.load_files(file_paths):
             self.setup_main_layout()
             self.update_model_list()
@@ -85,15 +99,25 @@ class MeasurementUI(QWidget):
             logger.error("Error loading files.")
 
     def update_canvas(self):
+        # Collect selected element IDs
         selected_elements_ids = [
             self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
             for index in range(self.elements_list.count())
             if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
         ]
-        self.canvas.figure = self.controller.get_updated_canvas(selected_elements_ids)
+
+        x_label, y_label, title = self.get_figure_labels()
+
+        # Update the canvas with selected elements and pass labels and title
+        self.canvas.figure = self.controller.get_updated_canvas(
+            selected_elements_ids, x_label, y_label, title
+        )
+
+        # Adjust canvas size based on the current widget size
         width, height = self.canvas.size().width(), self.canvas.size().height()
-        self.canvas.figure.set_size_inches(width / 80, height / 80)
-        self.canvas.draw()
+        self.canvas.figure.set_size_inches(width / 100, height / 100)  # Set figure size in inches
+
+        # Set the inputs for the export dialog with these values
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
     def update_model_list(self):
@@ -108,29 +132,24 @@ class MeasurementUI(QWidget):
             self.models_list.addItem(item)
 
     def update_elements_list(self):
-        # Store current selection states in a dictionary
         current_selections = {
             self.elements_list.item(index).data(Qt.ItemDataRole.UserRole):
                 self.elements_list.item(index).checkState() == Qt.CheckState.Checked
             for index in range(self.elements_list.count())
         }
 
-        # Clear the list
         elements = self.controller.get_all_elements()
         self.elements_list.clear()
 
-        # Create a list of tuples with element data (ID, label, plugin_name, model_name)
         element_data = [
             (element_id, element.label, element.plugin.plugin_name, element.model.name)
             for element_id, element in elements.items()
         ]
 
-        # Rebuild the list and reapply previous selections
         for element_id, label, plugin_name, model_name in element_data:
             item = QListWidgetItem(f"| {label} | Plugin: {plugin_name} | Model: {model_name} |")
             item.setData(Qt.ItemDataRole.UserRole, element_id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            # Apply the stored selection state or default to unchecked
             item.setCheckState(
                 Qt.CheckState.Checked if current_selections.get(element_id,
                                                                 False) else Qt.CheckState.Unchecked
@@ -149,14 +168,16 @@ class MeasurementUI(QWidget):
         """Handle files dropped onto the models list."""
         csv_files = Helper.collect_csv_files(file_paths)  # Collect valid CSV files
         if csv_files:
-            print("CSV Files Dropped:", csv_files)
+            logger.info(f"CSV Files Dropped: {csv_files}")
             self.controller.load_files(csv_files)  # Process dropped files
             self.update_model_list()  # Refresh model list after loading files
         else:
-            print("No valid CSV files found.")  # Log invalid files
+            logger.warning("No valid CSV files found.")  # Log invalid files
 
     def open_export_dialog(self):
-        dialog = ExportDialog(self)
+        x_label, y_label, title = self.get_figure_labels()
+        dialog = ExportDialog(self, x_label, y_label, title)
+
         while True:
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 settings = dialog.get_settings()
@@ -183,6 +204,13 @@ class MeasurementUI(QWidget):
                     QMessageBox.warning(self, "Filename is missing", "Please name your file")
             else:
                 break
+
+    def get_figure_labels(self):
+        x_label = self.canvas.figure.axes[0].get_xlabel()
+        y_label = self.canvas.figure.axes[0].get_ylabel()
+        title = self.canvas.figure.axes[0].get_title()
+
+        return x_label, y_label, title
 
     def cleanup(self):
         """Detach controller from the view."""
