@@ -26,7 +26,6 @@ class ModelContainer:
         try:
             # Extract headers
             headers = FileHelper.peek_headers(file_path)
-
             # Determine the appropriate loader based on headers
             if "O." in headers:
                 self.loader = OsmoDataLoader()

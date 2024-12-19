@@ -11,10 +11,12 @@ class FileHelper:
         try:
             with open(file_path, 'r') as file:
                 delimiter = FileHelper.detect_delimiter(file)
-
+                file.seek(0)
                 csv_reader = csv.reader(file, delimiter=delimiter)
+
                 for row in csv_reader:
                     if row and row[0].strip() == "#":
+                        # Return cleaned header by stripping extra whitespace and handling delimiters properly
                         return [header.strip() for header in row[1:]]
         except Exception as e:
             logging.error(f"Error reading headers from {file_path}: {e}")
