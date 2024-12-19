@@ -45,7 +45,7 @@ class MeasurementUI(QWidget):
 
         # Create the canvas for the plot
         self.canvas = FigureCanvas(
-            self.controller.get_updated_canvas([], "", "", ""))  # Initialize with an empty canvas
+            self.controller.get_updated_canvas([]))  # Initialize with an empty canvas
 
         # Create a navigation toolbar for interactivity (zoom, pan, etc.)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
@@ -55,7 +55,7 @@ class MeasurementUI(QWidget):
         self.left_layout.addWidget(self.canvas)
 
         # Add export button
-        self.export_button = QPushButton("Export", self)
+        self.export_button = QPushButton("Advance Export", self)
         self.export_button.setEnabled(False)
         self.export_button.clicked.connect(self.open_export_dialog)
         self.left_layout.addWidget(self.export_button)
@@ -106,12 +106,8 @@ class MeasurementUI(QWidget):
             if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
         ]
 
-        x_label, y_label, title = self.get_figure_labels()
-
         # Update the canvas with selected elements and pass labels and title
-        self.canvas.figure = self.controller.get_updated_canvas(
-            selected_elements_ids, x_label, y_label, title
-        )
+        self.canvas.figure = self.controller.get_updated_canvas(selected_elements_ids)
 
         # Adjust canvas size based on the current widget size
         width, height = self.canvas.size().width(), self.canvas.size().height()

@@ -16,6 +16,7 @@ class PlotManager:
         self.elements = {}  # Store plot elements by their unique ID
         self.fig, self.ax = plt.subplots()  # Initialize the figure and axis for plotting
         plt.ion()  # Enable interactive mode
+        self.grid = True
 
     def get_figure(self):
         """Return the figure object for external manipulation."""
@@ -52,14 +53,14 @@ class PlotManager:
         """Return all elements in the manager."""
         return self.elements
 
-    def visualize_selected_elements(self, selected_element_ids, x_label, y_label, title):
+    def visualize_selected_elements(self, selected_element_ids):
         """Visualize all selected elements."""
-        self.ax.clear()  # Clear previous plot elements
+        # Store the current state of the title, and labels
+        title = self.ax.get_title()
+        x_label = self.ax.get_xlabel()
+        y_label = self.ax.get_ylabel()
 
-        # Set the axis labels and title again after clearing
-        self.ax.set_xlabel(x_label)
-        self.ax.set_ylabel(y_label)
-        self.ax.set_title(title)
+        self.ax.clear()
 
         # Visualize only the selected elements
         for element_id in selected_element_ids:
@@ -67,7 +68,13 @@ class PlotManager:
             if element:
                 element.render(self.ax)
 
-        # Add a legend only if there are any artists in the axes
+        # Reapply the title, labels, and grid state
+        self.ax.set_title(title)
+        self.ax.set_xlabel(x_label)
+        self.ax.set_ylabel(y_label)
+        self.ax.grid(self.grid)
+
+        # Add a legend only if there are any plot elements
         if self.ax.has_data():
             self.ax.legend()  # Add a legend for better readability
 

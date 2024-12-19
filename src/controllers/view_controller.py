@@ -28,10 +28,10 @@ class ViewController:
             logger.error(f"Error during loading files: {e}")
             return False
 
-    def get_updated_canvas(self, selected_element_ids, x_label, y_label, title):
+    def get_updated_canvas(self, selected_element_ids):
         """Ask PlotManager to visualize only selected elements and return the canvas."""
         # Visualize the selected elements and pass labels and title
-        self.plot_manager.visualize_selected_elements(selected_element_ids, x_label, y_label, title)
+        self.plot_manager.visualize_selected_elements(selected_element_ids)
 
         logger.info("Canvas updated with selected elements.")
 
