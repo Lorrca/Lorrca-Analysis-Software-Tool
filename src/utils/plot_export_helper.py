@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Patch
