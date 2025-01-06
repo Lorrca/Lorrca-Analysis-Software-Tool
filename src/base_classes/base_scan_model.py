@@ -1,11 +1,12 @@
+from abc import ABC
 from dataclasses import dataclass, field
 import numpy as np
 import uuid
 
 
 @dataclass
-class BaseScanModel:
-    """Data container for measurement data and metadata."""
+class BaseScanModel(ABC):
+    """Abstract base class for measurement data and metadata."""
     data: dict[str, np.ndarray]
     metadata: dict
     id: str = field(default_factory=lambda: str(uuid.uuid4()))  # Automatically assign an ID
@@ -26,19 +27,20 @@ class BaseScanModel:
         return hash((data_hashable, metadata_hashable))
 
     def __eq__(self, other):
-        """Check equality of two BaseModel instances."""
-        if isinstance(other, BaseScanModel):
+        """Check equality of two BaseScanModel instances."""
+        if not isinstance(other, BaseScanModel):
             return False
 
-        # Compare data dictionaries, using numpy's array_equal to compare arrays
+        # Compare keys in the data dictionaries
         if self.data.keys() != other.data.keys():
             return False
 
-        # Check whether any of the arrays are not equal.
-        if any(not np.array_equal(value, other.data[key]) for key, value in self.data.items()):
-            return False
+        # Compare values in the data dictionaries using numpy's array_equal
+        for key, value in self.data.items():
+            if not np.array_equal(value, other.data[key]):
+                return False
 
-        # Compare metadata dictionaries
+        # Compare metadata dictionaries for equality
         if self.metadata != other.metadata:
             return False
 
