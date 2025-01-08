@@ -172,7 +172,8 @@ class MeasurementUI(QWidget):
         ]
 
         for element_id, label, plugin_name, measurement_name in element_data:
-            item = QListWidgetItem(f"| {label} | Plugin: {plugin_name} | Measurement: {measurement_name} |")
+            item = QListWidgetItem(
+                f"| {label} | Plugin: {plugin_name} | Measurement: {measurement_name} |")
             item.setData(Qt.ItemDataRole.UserRole, element_id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(
