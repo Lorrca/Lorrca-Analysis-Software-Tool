@@ -1,7 +1,8 @@
 import logging
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem, QDialog, QMessageBox
+    QWidget, QStackedLayout, QListWidgetItem, QDialog, QMessageBox, QToolButton
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
@@ -31,7 +32,7 @@ class MeasurementUI(QWidget):
         self.left_layout = None
         self.right_layout = None
         self.canvas = None
-        self.models_list = None
+        self.measurements_list = None
         self.elements_list = None
         self.export_button = None
         self.toolbar = None
@@ -54,11 +55,24 @@ class MeasurementUI(QWidget):
         self.left_layout.addWidget(self.toolbar)
         self.left_layout.addWidget(self.canvas)
 
-        # Add export button
-        self.export_button = QPushButton("Advance Export", self)
+        # Add export button with help icon
+        export_layout = QHBoxLayout()
+
+        self.export_button = QPushButton("Advanced Export", self)
         self.export_button.setEnabled(False)
         self.export_button.clicked.connect(self.open_export_dialog)
-        self.left_layout.addWidget(self.export_button)
+        export_layout.addWidget(self.export_button)
+
+        export_help_button = QToolButton(self)
+        export_help_button.setIcon(QIcon.fromTheme("help-about"))  # Standard "info" icon
+        export_help_button.setToolTip(
+            "A flexible way to export the plot. <br>"
+            "The exported image will be stored in the designated 'results' folder in the root."
+        )  # Help text with line break
+        export_help_button.setCursor(Qt.CursorShape.PointingHandCursor)  # Make it feel clickable
+        export_layout.addWidget(export_help_button)
+
+        self.left_layout.addLayout(export_layout)
 
         horizontal_layout.addWidget(left_frame, stretch=1)
 
@@ -66,15 +80,30 @@ class MeasurementUI(QWidget):
         right_frame = QFrame(self.main_frame)
         self.right_layout = QVBoxLayout(right_frame)
 
-        models_label = QLabel("Models", self)
-        self.right_layout.addWidget(models_label)
+        # Add "Measurements" label with an "i" icon
+        measurements_label_layout = QHBoxLayout()
+        measurements_label = QLabel("Measurements", self)
+        measurements_label_layout.addWidget(measurements_label)
+
+        help_button = QToolButton(self)
+        help_button.setIcon(QIcon.fromTheme("help-about"))  # Standard "info" icon
+        help_button.setToolTip(
+            "Select a measurement to analyze. <br>"
+            "Plugins run on the selected measurement, creating elements for further analysis."
+        )  # Help text
+        help_button.setCursor(Qt.CursorShape.PointingHandCursor)  # Make it feel clickable
+
+        measurements_label_layout.addWidget(help_button)
+        measurements_label_layout.addStretch()  # Push everything to the left
+
+        self.right_layout.addLayout(measurements_label_layout)
 
         # Use ModelsListWidget here
-        self.models_list = ModelsListWidget(self)
-        self.models_list.fileDropped.connect(self.on_files_dropped)  # Handle dropped files
-        self.models_list.itemChanged.connect(
-            self.on_model_selection_changed)  # Connect to item change
-        self.right_layout.addWidget(self.models_list)
+        self.measurements_list = ModelsListWidget(self)
+        self.measurements_list.fileDropped.connect(self.on_files_dropped)  # Handle dropped files
+        self.measurements_list.itemChanged.connect(
+            self.on_measurement_selection_changed)  # Connect to item change
+        self.right_layout.addWidget(self.measurements_list)
 
         elements_label = QLabel("Elements", self)
         self.right_layout.addWidget(elements_label)
@@ -117,15 +146,15 @@ class MeasurementUI(QWidget):
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
     def update_model_list(self):
-        models = self.controller.get_all_models_with_selection()
-        self.models_list.clear()
+        measurements = self.controller.get_all_models_with_selection()
+        self.measurements_list.clear()
 
-        for model_id, measurement_id, selected in models:
+        for model_id, measurement_id, selected in measurements:
             item = QListWidgetItem(measurement_id)
             item.setData(Qt.ItemDataRole.UserRole, model_id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
-            self.models_list.addItem(item)
+            self.measurements_list.addItem(item)
 
     def update_elements_list(self):
         current_selections = {
@@ -142,8 +171,8 @@ class MeasurementUI(QWidget):
             for element_id, element in elements.items()
         ]
 
-        for element_id, label, plugin_name, model_name in element_data:
-            item = QListWidgetItem(f"| {label} | Plugin: {plugin_name} | Model: {model_name} |")
+        for element_id, label, plugin_name, measurement_name in element_data:
+            item = QListWidgetItem(f"| {label} | Plugin: {plugin_name} | Measurement: {measurement_name} |")
             item.setData(Qt.ItemDataRole.UserRole, element_id)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(
@@ -152,11 +181,11 @@ class MeasurementUI(QWidget):
             )
             self.elements_list.addItem(item)
 
-    def on_model_selection_changed(self, item):
+    def on_measurement_selection_changed(self, item):
         """Handle model selection changes."""
-        model_id = item.data(Qt.ItemDataRole.UserRole)
+        measurement_id = item.data(Qt.ItemDataRole.UserRole)
         checked = item.checkState() == Qt.CheckState.Checked
-        self.controller.update_model_selection(model_id, checked)
+        self.controller.update_model_selection(measurement_id, checked)
         self.update_elements_list()
         self.update_canvas()
 
