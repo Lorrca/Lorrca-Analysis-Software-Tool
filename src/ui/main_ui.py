@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
             "Nothing is here. Create a new analysis by going to File/New Analysis.", self
         )
         self.stacked_widget = QStackedWidget(self)
-        self.tabs = None
+        self.tabs = QTabWidget(self)
         self.ui_views = []  # List to store UI instances (views)
 
         self.setWindowTitle("L.A.S.T")
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         central_layout.addWidget(self.stacked_widget)
 
         # Tab widget
-        self.tabs = QTabWidget(self)
+
         self.stacked_widget.addWidget(self.tabs)
 
         # Placeholder message when no tabs are present
@@ -104,9 +104,12 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             # Ensure cleanup of associated UI resources
             if tab_widget in self.ui_views:
-                tab_widget.cleanup()
+                # Check if cleanup method exists before calling it
+                if hasattr(tab_widget, 'cleanup'):
+                    tab_widget.cleanup()
                 self.ui_views.remove(tab_widget)
 
+            # Remove the tab
             self.tabs.removeTab(index)
 
         # Update the view to reflect if tabs are empty after closing
