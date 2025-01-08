@@ -1,5 +1,7 @@
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QTabWidget, QInputDialog, QMessageBox
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QInputDialog, \
+    QMessageBox, QLabel, QStackedWidget
+from PySide6.QtCore import Qt
 
 from src.controllers.view_controller import ViewController
 from src.ui.measurement_ui import MeasurementUI
@@ -9,9 +11,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.empty_message_label = QLabel(
+            "Nothing is here. Create a new analysis by going to File/New Analysis.", self
+        )
+        self.stacked_widget = QStackedWidget(self)
         self.tabs = None
-        self.create_view_button = None
-
         self.ui_views = []  # List to store UI instances (views)
 
         self.setWindowTitle("L.A.S.T")
@@ -21,31 +25,47 @@ class MainWindow(QMainWindow):
         # Set up the central widget and layout
         self.setup_central_widget()
 
+        # Set up the menu bar
+        self.setup_menu_bar()
+
     def setup_central_widget(self):
         """Set up central widget and its layout."""
         central_widget = QWidget(self)
         central_layout = QVBoxLayout(central_widget)
 
-        # Buttons to create a new Osmo or Oxy Scan
-        self.create_view_button = QPushButton("Create New View", self)
-
-        # Add buttons to the central layout
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.create_view_button)
-        central_layout.addLayout(button_layout)
+        # Create a stacked widget to switch between tabs and message
+        central_layout.addWidget(self.stacked_widget)
 
         # Tab widget
         self.tabs = QTabWidget(self)
-        central_layout.addWidget(self.tabs)
+        self.stacked_widget.addWidget(self.tabs)
+
+        # Placeholder message when no tabs are present
+        self.empty_message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.stacked_widget.addWidget(self.empty_message_label)
 
         # Set tabs to be closable
         self.tabs.setTabsClosable(True)
 
+        # Set central widget
         self.setCentralWidget(central_widget)
 
-        # Connect buttons
-        self.create_view_button.clicked.connect(self.create_tab)
+        # Connect tab close signal
         self.tabs.tabCloseRequested.connect(self.close_tab)
+
+        # Update the view to reflect if tabs are empty
+        self.update_empty_message()
+
+    def setup_menu_bar(self):
+        """Set up the menu bar with File/New Analysis."""
+        menu_bar = self.menuBar()
+
+        file_menu = menu_bar.addMenu("File")
+
+        # New Analysis action
+        new_analysis_action = QAction("New Analysis", self)
+        new_analysis_action.triggered.connect(self.create_tab)
+        file_menu.addAction(new_analysis_action)
 
     def create_tab(self):
         """Create a new tab."""
@@ -66,6 +86,9 @@ class MainWindow(QMainWindow):
 
             self.ui_views.append(ui_instance)
 
+        # Update the view to reflect if tabs are empty after adding
+        self.update_empty_message()
+
     def close_tab(self, index):
         """Close the tab at the given index with a confirmation dialog."""
         tab_widget = self.tabs.widget(index)
@@ -85,3 +108,13 @@ class MainWindow(QMainWindow):
                 self.ui_views.remove(tab_widget)
 
             self.tabs.removeTab(index)
+
+        # Update the view to reflect if tabs are empty after closing
+        self.update_empty_message()
+
+    def update_empty_message(self):
+        """Update visibility of the empty message when there are no tabs."""
+        if self.tabs.count() == 0:
+            self.stacked_widget.setCurrentWidget(self.empty_message_label)
+        else:
+            self.stacked_widget.setCurrentWidget(self.tabs)
