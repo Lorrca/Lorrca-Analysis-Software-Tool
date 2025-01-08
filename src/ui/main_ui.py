@@ -65,6 +65,10 @@ class MainWindow(QMainWindow):
         # New Analysis action
         new_analysis_action = QAction("New Analysis", self)
         new_analysis_action.triggered.connect(self.create_tab)
+
+        # Set shortcut for new analysis
+        new_analysis_action.setShortcut("Ctrl+N")
+
         file_menu.addAction(new_analysis_action)
 
     def create_tab(self):
