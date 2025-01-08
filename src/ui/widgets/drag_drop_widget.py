@@ -8,7 +8,7 @@ from src.utils.file_reader_helper import FileHelper as Helper
 class DragDropWidget(QFrame):
     """Widget for drag-and-drop file or folder handling."""
 
-    DEFAULT_MESSAGE = "Drag and drop a CSV file or folder here"
+    DEFAULT_MESSAGE = "Drag and drop a CSV file or folder here to start the analysis."
 
     def __init__(self, load_files_callback):
         super().__init__()
