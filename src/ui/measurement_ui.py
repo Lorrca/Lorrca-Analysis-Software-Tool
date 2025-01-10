@@ -164,6 +164,9 @@ class MeasurementUI(QWidget):
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
             self.tree.addTopLevelItem(item)  # Add the item to the tree
 
+        self.tree.itemChanged.connect(
+            self.on_item_changed)  # Reconnect the signal after populating the tree
+
     def on_item_changed(self, item, column):
         if column != 0:  # Only handle checkbox changes
             return
