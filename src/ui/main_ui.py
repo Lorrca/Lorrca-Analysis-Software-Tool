@@ -12,7 +12,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.empty_message_label = QLabel(
-            "Nothing is here. Create a new analysis by going to File/New Analysis.", self
+            "Create a new analysis by going to File/New Analysis.", self
         )
         self.stacked_widget = QStackedWidget(self)
         self.tabs = QTabWidget(self)
