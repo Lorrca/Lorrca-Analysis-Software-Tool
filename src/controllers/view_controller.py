@@ -50,8 +50,11 @@ class ViewController:
         logger.info(f"Retrieved {len(elements)} elements.")
         return elements
 
-    def get_all_models_with_selection(self):
+    def get_all_measurements_with_selection(self):
         return self.model_container.get_all_models_with_selection()
+
+    def get_elements_by_model_id(self, model_id):
+        return self.plot_manager.get_elements_by_model_id(model_id)
 
     def update_model_selection(self, model_id, selected):
         if selected:

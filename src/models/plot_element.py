@@ -19,12 +19,12 @@ class PlotElement(ABC):
     @property
     def model_name(self):
         """Return the name of the model."""
-        return self.model.name if self.model else "Unknown Model"
+        return self.model.name if self.model else "Failed to Load Model Name"
 
     @property
     def plugin_name(self):
         """Return the name of the plugin."""
-        return self.plugin.name
+        return self.plugin.plugin_name if self.plugin else "Failed to Load Plugin Name"
 
     @property
     def model_id(self):

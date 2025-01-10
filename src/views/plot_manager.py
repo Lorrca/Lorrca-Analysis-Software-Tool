@@ -36,6 +36,11 @@ class PlotManager:
         if element_id in self.elements:
             del self.elements[element_id]
 
+    def get_elements_by_model_id(self, model_id):
+        elements_selection = [element for element in self.elements.values() if
+                              element.model_id == model_id]
+        return elements_selection
+
     def remove_elements_by_model_id(self, model_id):
         """Remove all plot elements associated with a given model ID."""
         elements_to_remove = [element_id for element_id, element in self.elements.items() if

@@ -82,8 +82,9 @@ class ModelContainer:
 
     def update_selection(self, model_id: str, selected: bool):
         """Update the selection state for a given model."""
-        self.selection_state[model_id] = selected
-        logger.info(f"Updated selection for model {model_id}: {selected}")
+        if model_id not in self.selection_state or self.selection_state[model_id] != selected:
+            self.selection_state[model_id] = selected
+            logger.info(f"Updated selection for model {model_id}: {selected}")
 
     def get_selected_models(self) -> List[BaseScanModel]:
         """Return a list of selected models based on the selection state."""
@@ -94,9 +95,8 @@ class ModelContainer:
         return selected_models
 
     def get_all_models_with_selection(self) -> List[tuple]:
-        """Return a list of tuples containing model ID, measurement ID, and selection state."""
-        return [(model.id, model.name, self.selection_state.get(model.id, False)) for
-                model in self.single_models]
+        """Return a list of tuples containing model and its selection state."""
+        return [(model, self.selection_state.get(model.id, False)) for model in self.single_models]
 
     def print_all_models(self):
         """Print all models stored in the container."""
