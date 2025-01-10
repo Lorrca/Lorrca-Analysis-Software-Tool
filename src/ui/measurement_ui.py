@@ -147,26 +147,41 @@ class MeasurementUI(QWidget):
 
     def update_measurement_tree_widget(self):
         """Update the tree widget with measurements and reset the state."""
-        # Reset state of all measurements
-        self.reset_tree_widget_state()
-
-        self.tree.clear()  # Clear existing items in the tree
+        # Temporarily disconnect the itemChanged signal to prevent recursion
+        self.tree.itemChanged.disconnect(self.on_item_changed)
 
         # Populate the tree with updated data
         measurements_with_selection = self.controller.get_all_measurements_with_selection()
 
+        # Iterate through each measurement and update its state
         for model, selected in measurements_with_selection:
-            item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
-            item.setData(0, Qt.ItemDataRole.UserRole,
-                         model.id)  # Store the model ID in the userRole
-            # Set checkbox state based on selection
-            item.setCheckState(0,
-                               Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
-            self.tree.addTopLevelItem(item)  # Add the item to the tree
+            # Check if the model already exists in the tree (based on model.id)
+            existing_item = self.find_item_by_model_id(model.id)
 
-        self.tree.itemChanged.connect(
-            self.on_item_changed)  # Reconnect the signal after populating the tree
+            if existing_item:
+                # Update existing item (checkbox state)
+                existing_item.setCheckState(0,
+                                            Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
+            else:
+                # Create new item if it doesn't exist
+                item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
+                item.setData(0, Qt.ItemDataRole.UserRole,
+                             model.id)  # Store the model ID in the userRole
+                item.setCheckState(0,
+                                   Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)  # Set checkbox state
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
+                self.tree.addTopLevelItem(item)  # Add the item to the tree
+
+        # Reconnect the itemChanged signal after populating the tree
+        self.tree.itemChanged.connect(self.on_item_changed)
+
+    def find_item_by_model_id(self, model_id: str):
+        """Helper function to find a tree item by model ID."""
+        for i in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(i)
+            if item.data(0, Qt.ItemDataRole.UserRole) == model_id:
+                return item
+        return None
 
     def on_item_changed(self, item, column):
         if column != 0:  # Only handle checkbox changes
@@ -237,20 +252,6 @@ class MeasurementUI(QWidget):
             self.update_measurement_tree_widget()  # Refresh model list after loading files
         else:
             logger.warning("No valid CSV files found.")  # Log invalid files
-
-    def reset_tree_widget_state(self):
-        """Deselect all measurements and reset their state."""
-        for i in range(self.tree.topLevelItemCount()):
-            measurement_item = self.tree.topLevelItem(i)
-
-            # Get the model ID associated with the measurement item
-            model_id = measurement_item.data(0, Qt.ItemDataRole.UserRole)
-
-            # Update the model selection to False (unselected) using the controller
-            self.controller.update_model_selection(model_id, False)
-
-        # Update canvas to reflect the reset state
-        self.update_canvas()
 
     def get_figure_labels(self):
         x_label = self.canvas.figure.axes[0].get_xlabel()
