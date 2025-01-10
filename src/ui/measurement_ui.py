@@ -161,14 +161,16 @@ class MeasurementUI(QWidget):
             if existing_item:
                 # Update existing item (checkbox state)
                 existing_item.setCheckState(0,
-                                            Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
+                                            Qt.CheckState.Checked if selected else
+                                            Qt.CheckState.Unchecked)
             else:
                 # Create new item if it doesn't exist
                 item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
                 item.setData(0, Qt.ItemDataRole.UserRole,
                              model.id)  # Store the model ID in the userRole
+                # Set checkbox state
                 item.setCheckState(0,
-                                   Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)  # Set checkbox state
+                                   Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
                 self.tree.addTopLevelItem(item)  # Add the item to the tree
 
