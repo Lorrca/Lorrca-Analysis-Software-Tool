@@ -159,8 +159,9 @@ class MeasurementUI(QWidget):
             item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
             item.setData(0, Qt.ItemDataRole.UserRole,
                          model.id)  # Store the model ID in the userRole
+            # Set checkbox state based on selection
             item.setCheckState(0,
-                               Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)  # Set checkbox state based on selection
+                               Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
             self.tree.addTopLevelItem(item)  # Add the item to the tree
 
