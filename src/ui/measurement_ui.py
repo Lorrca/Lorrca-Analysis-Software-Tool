@@ -1,16 +1,15 @@
 import logging
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QFrame, QLabel, QListWidget, QPushButton, \
-    QWidget, QStackedLayout, QListWidgetItem, QDialog, QMessageBox, QToolButton
+
+from PySide6.QtGui import QIcon, Qt
+from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QStackedLayout, QVBoxLayout, \
+    QPushButton, QToolButton, QLabel, QTreeView, QDialog, QMessageBox, QTreeWidgetItem
+from matplotlib.backends.backend_qt import NavigationToolbar2QT
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 from src.ui.widgets.drag_drop_widget import DragDropWidget
 from src.ui.widgets.export_dialog import ExportDialog
-from src.ui.widgets.models_list_widget import ModelsListWidget
-
-from src.utils.file_reader_helper import FileHelper as Helper
+from src.ui.widgets.measurement_tree_widget import MeasurementTreeWidget
+from src.utils.file_reader_helper import FileHelper
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +31,9 @@ class MeasurementUI(QWidget):
         self.left_layout = None
         self.right_layout = None
         self.canvas = None
-        self.measurements_list = None
-        self.elements_list = None
         self.export_button = None
         self.toolbar = None
+        self.tree = None
 
     def setup_main_layout(self):
         horizontal_layout = QHBoxLayout()
@@ -76,7 +74,7 @@ class MeasurementUI(QWidget):
 
         horizontal_layout.addWidget(left_frame, stretch=1)
 
-        # Right Frame (Models and Elements List)
+        # Right Frame (TreeView for Measurements and Elements)
         right_frame = QFrame(self.main_frame)
         self.right_layout = QVBoxLayout(right_frame)
 
@@ -98,19 +96,14 @@ class MeasurementUI(QWidget):
 
         self.right_layout.addLayout(measurements_label_layout)
 
-        # Use ModelsListWidget here
-        self.measurements_list = ModelsListWidget(self)
-        self.measurements_list.fileDropped.connect(self.on_files_dropped)  # Handle dropped files
-        self.measurements_list.itemChanged.connect(
-            self.on_measurement_selection_changed)  # Connect to item change
-        self.right_layout.addWidget(self.measurements_list)
+        # TreeView for displaying measurements and elements
+        self.tree = MeasurementTreeWidget()
+        self.tree.fileDropped.connect(self.on_files_dropped)
+        self.tree.setHeaderHidden(True)  # Hide the header for simplicity
+        self.tree.setSelectionMode(QTreeView.SelectionMode.MultiSelection)
+        self.tree.setHeaderLabel("Measurement")
 
-        elements_label = QLabel("Elements", self)
-        self.right_layout.addWidget(elements_label)
-
-        self.elements_list = QListWidget(self)
-        self.elements_list.itemChanged.connect(self.update_canvas)
-        self.right_layout.addWidget(self.elements_list)
+        self.right_layout.addWidget(self.tree)
 
         horizontal_layout.addWidget(right_frame)
         main_widget = QWidget()
@@ -122,83 +115,104 @@ class MeasurementUI(QWidget):
         """Load files and delegate storage to the controller."""
         if self.controller.load_files(file_paths):
             self.setup_main_layout()
-            self.update_model_list()
-            self.update_elements_list()
+            self.update_measurement_tree_widget()
         else:
             logger.error("Error loading files.")
 
     def update_canvas(self):
-        # Collect selected element IDs
-        selected_elements_ids = [
-            self.elements_list.item(index).data(Qt.ItemDataRole.UserRole)
-            for index in range(self.elements_list.count())
-            if self.elements_list.item(index).checkState() == Qt.CheckState.Checked
-        ]
+        # Collect selected element IDs (checked elements only)
+        selected_elements_ids = []
 
-        # Update the canvas with selected elements and pass labels and title
+        # Iterate through top-level items (measurements)
+        for i in range(self.tree.topLevelItemCount()):
+            measurement_item = self.tree.topLevelItem(i)
+
+            # Iterate through child items (elements)
+            for j in range(measurement_item.childCount()):
+                element_item = measurement_item.child(j)
+
+                # Check if the child item (element) is checked
+                if element_item.checkState(0) == Qt.CheckState.Checked:
+                    selected_elements_ids.append(element_item.data(0, Qt.ItemDataRole.UserRole))
+
+        # Update the canvas with selected elements
         self.canvas.figure = self.controller.get_updated_canvas(selected_elements_ids)
 
         # Adjust canvas size based on the current widget size
         width, height = self.canvas.size().width(), self.canvas.size().height()
         self.canvas.figure.set_size_inches(width / 100, height / 100)  # Set figure size in inches
 
-        # Set the inputs for the export dialog with these values
+        # Enable export button if there is any plot data
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
-    def update_model_list(self):
-        measurements = self.controller.get_all_models_with_selection()
-        self.measurements_list.clear()
+    def update_measurement_tree_widget(self):
+        """Update the tree widget with measurements and reset the state."""
+        # Temporarily disconnect the itemChanged signal to prevent recursion
+        self.tree.itemChanged.disconnect(self.on_item_changed)
 
-        for model_id, measurement_id, selected in measurements:
-            item = QListWidgetItem(measurement_id)
-            item.setData(Qt.ItemDataRole.UserRole, model_id)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
-            self.measurements_list.addItem(item)
+        # Populate the tree with updated data
+        measurements_with_selection = self.controller.get_all_measurements_with_selection()
 
-    def update_elements_list(self):
-        current_selections = {
-            self.elements_list.item(index).data(Qt.ItemDataRole.UserRole):
-                self.elements_list.item(index).checkState() == Qt.CheckState.Checked
-            for index in range(self.elements_list.count())
-        }
+        # Iterate through each measurement and update its state
+        for model, selected in measurements_with_selection:
+            # Check if the model already exists in the tree (based on model.id)
+            existing_item = self.find_item_by_model_id(model.id)
 
-        elements = self.controller.get_all_elements()
-        self.elements_list.clear()
+            if existing_item:
+                # Update existing item (checkbox state)
+                existing_item.setCheckState(0,
+                                            Qt.CheckState.Checked if selected else
+                                            Qt.CheckState.Unchecked)
+            else:
+                # Create new item if it doesn't exist
+                item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
+                item.setData(0, Qt.ItemDataRole.UserRole,
+                             model.id)  # Store the model ID in the userRole
+                # Set checkbox state
+                item.setCheckState(0,
+                                   Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
+                self.tree.addTopLevelItem(item)  # Add the item to the tree
 
-        element_data = [
-            (element_id, element.label, element.plugin.plugin_name, element.model.name)
-            for element_id, element in elements.items()
-        ]
+        # Reconnect the itemChanged signal after populating the tree
+        self.tree.itemChanged.connect(self.on_item_changed)
 
-        for element_id, label, plugin_name, measurement_name in element_data:
-            item = QListWidgetItem(
-                f"| {label} | Plugin: {plugin_name} | Measurement: {measurement_name} |")
-            item.setData(Qt.ItemDataRole.UserRole, element_id)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(
-                Qt.CheckState.Checked if current_selections.get(element_id,
-                                                                False) else Qt.CheckState.Unchecked
-            )
-            self.elements_list.addItem(item)
+    def find_item_by_model_id(self, model_id: str):
+        """Helper function to find a tree item by model ID."""
+        for i in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(i)
+            if item.data(0, Qt.ItemDataRole.UserRole) == model_id:
+                return item
+        return None
 
-    def on_measurement_selection_changed(self, item):
-        """Handle model selection changes."""
-        measurement_id = item.data(Qt.ItemDataRole.UserRole)
-        checked = item.checkState() == Qt.CheckState.Checked
-        self.controller.update_model_selection(measurement_id, checked)
-        self.update_elements_list()
+    def on_item_changed(self, item, column):
+        if column != 0:  # Only handle checkbox changes
+            return
+
+        model_id = item.data(0, Qt.ItemDataRole.UserRole)
+        is_selected = item.checkState(0) == Qt.CheckState.Checked
+        self.controller.update_model_selection(model_id, is_selected)
+
+        if is_selected:
+            self.add_elements_to_tree(item, model_id)
+        else:
+            item.takeChildren()  # Clear child elements
+
+        # Update canvas when measurement selection changes
         self.update_canvas()
 
-    def on_files_dropped(self, file_paths):
-        """Handle files dropped onto the models list."""
-        csv_files = Helper.collect_csv_files(file_paths)  # Collect valid CSV files
-        if csv_files:
-            logger.info(f"CSV Files Dropped: {csv_files}")
-            self.controller.load_files(csv_files)  # Process dropped files
-            self.update_model_list()  # Refresh model list after loading files
-        else:
-            logger.warning("No valid CSV files found.")  # Log invalid files
+    def add_elements_to_tree(self, parent_item, model_id):
+        elements = self.controller.get_elements_by_model_id(model_id)
+        existing_element_ids = {child.data(0, Qt.ItemDataRole.UserRole) for child in
+                                parent_item.takeChildren()}
+
+        for element in elements:
+            if element.id not in existing_element_ids:
+                child_item = QTreeWidgetItem([f"{element.label} - {element.plugin_name}"])
+                child_item.setData(0, Qt.ItemDataRole.UserRole, element.id)
+                child_item.setFlags(child_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                child_item.setCheckState(0, Qt.CheckState.Unchecked)
+                parent_item.addChild(child_item)
 
     def open_export_dialog(self):
         x_label, y_label, title = self.get_figure_labels()
@@ -230,6 +244,16 @@ class MeasurementUI(QWidget):
                     QMessageBox.warning(self, "Filename is missing", "Please name your file")
             else:
                 break
+
+    def on_files_dropped(self, file_paths):
+        """Handle files dropped onto the models list."""
+        csv_files = FileHelper.collect_csv_files(file_paths)  # Collect valid CSV files
+        if csv_files:
+            logger.info(f"CSV Files Dropped: {csv_files}")
+            self.controller.load_files(csv_files)  # Process dropped files
+            self.update_measurement_tree_widget()  # Refresh model list after loading files
+        else:
+            logger.warning("No valid CSV files found.")  # Log invalid files
 
     def get_figure_labels(self):
         x_label = self.canvas.figure.axes[0].get_xlabel()

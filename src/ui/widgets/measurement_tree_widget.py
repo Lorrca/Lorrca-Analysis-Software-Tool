@@ -1,11 +1,10 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QListWidget, QMenu
+from PySide6.QtWidgets import QTreeWidget
 
 from src.utils.file_reader_helper import FileHelper as Helper  # Import the Helper class
 
 
-class ModelsListWidget(QListWidget):
+class MeasurementTreeWidget(QTreeWidget):
     fileDropped = Signal(list)  # Signal to notify when files are dropped
 
     def __init__(self, parent=None):
