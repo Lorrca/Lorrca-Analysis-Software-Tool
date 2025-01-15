@@ -50,6 +50,15 @@ class PlotManager:
             self.remove_element_by_id(element_id)
         logger.info(f"Remaining elements: {self.elements}")
 
+    def remove_elements_by_plugin_id(self, plugin_id):
+        """Remove all plot elements associated with a given model ID."""
+        elements_to_remove = [element_id for element_id, element in self.elements.items() if
+                              element.plugin_id == plugin_id]
+        logger.info(f"Elements to be removed: {elements_to_remove}")
+        for element_id in elements_to_remove:
+            self.remove_element_by_id(element_id)
+        logger.info(f"Remaining elements: {self.elements}")
+
     def get_element_by_id(self, element_id):
         """Retrieve a plot element by its ID."""
         return self.elements.get(element_id)

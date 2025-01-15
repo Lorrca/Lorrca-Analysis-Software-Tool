@@ -69,6 +69,11 @@ class ViewController:
             filename, width, height, dpi, x_label, y_label, title
         )
 
+    def update_plugin_selection(self, plugin_id, selected):
+        self.plugin_manager.set_plugin_selection(plugin_id, selected)
+        if not selected:
+            self.plot_manager.remove_elements_by_plugin_id(plugin_id)
+
     def __del__(self):
         """Notify when the controller is deleted."""
         logger.info(f"Controller {self} deleted.")

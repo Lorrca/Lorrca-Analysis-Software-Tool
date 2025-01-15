@@ -89,8 +89,8 @@ class ModelContainer:
     def get_selected_models(self) -> List[BaseScanModel]:
         """Return a list of selected models based on the selection state."""
         selected_models = [
-            model for model_id, _, selected in self.get_all_models_with_selection() if selected
-            if (model := self.get_model_by_id(model_id))
+            model for model, selected in self.get_all_models_with_selection()
+            if selected and self.get_model_by_id(model.id) is not None
         ]
         return selected_models
 

@@ -177,6 +177,46 @@ class MeasurementUI(QWidget):
         # Reconnect the itemChanged signal after populating the tree
         self.tree.itemChanged.connect(self.on_item_changed)
 
+    def fetch_all_models_and_elements(self):
+        """Fetch all models and their elements while keeping the current selection and state."""
+        # Temporarily disconnect the itemChanged signal to prevent recursion
+        self.tree.itemChanged.disconnect(self.on_item_changed)
+
+        # Fetch all models and their selection state from the model_container
+        all_models_with_selection = self.controller.get_all_measurements_with_selection()
+
+        # Iterate through each model and its elements
+        for model, selected in all_models_with_selection:
+            # Find the model item in the tree (if it exists)
+            model_item = self.find_item_by_model_id(model.id)
+
+            if model_item:
+                # Preserve the selection state of the model
+                is_selected = model_item.checkState(0) == Qt.CheckState.Checked
+
+                # Clear current children (elements) for the model item
+                model_item.takeChildren()
+
+                # Add elements for the model from plot_manager
+                self.add_elements_to_tree(model_item, model.id)
+
+                # Restore the selection state for the model
+                model_item.setCheckState(0,
+                                         Qt.CheckState.Checked if is_selected else Qt.CheckState.Unchecked)
+
+            else:
+                # If the model doesn't exist, create a new item and add its elements
+                model_item = QTreeWidgetItem([model.name])
+                model_item.setData(0, Qt.ItemDataRole.UserRole, model.id)
+                model_item.setFlags(model_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                self.tree.addTopLevelItem(model_item)
+
+                # Add elements for the new model
+                self.add_elements_to_tree(model_item, model.id)
+
+        # Reconnect the itemChanged signal after populating the tree
+        self.tree.itemChanged.connect(self.on_item_changed)
+
     def find_item_by_model_id(self, model_id: str):
         """Helper function to find a tree item by model ID."""
         for i in range(self.tree.topLevelItemCount()):
@@ -190,15 +230,18 @@ class MeasurementUI(QWidget):
             return
 
         model_id = item.data(0, Qt.ItemDataRole.UserRole)
-        is_selected = item.checkState(0) == Qt.CheckState.Checked
-        self.controller.update_model_selection(model_id, is_selected)
 
-        if is_selected:
-            self.add_elements_to_tree(item, model_id)
-        else:
-            item.takeChildren()  # Clear child elements
+        if item.parent() is None:  # It's a measurement item
+            # Update measurement selection (this will be handled as before)
+            is_selected = item.checkState(0) == Qt.CheckState.Checked
+            self.controller.update_model_selection(model_id, is_selected)
 
-        # Update canvas when measurement selection changes
+            if is_selected:
+                self.add_elements_to_tree(item, model_id)
+            else:
+                item.takeChildren()  # Clear child elements
+
+        # Update canvas when measurement or element selection changes
         self.update_canvas()
 
     def add_elements_to_tree(self, parent_item, model_id):
