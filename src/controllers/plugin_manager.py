@@ -56,7 +56,6 @@ class PluginManager:
             try:
                 # Get all selected models
                 selected_models = self.model_container.get_selected_models()
-                print(selected_models)
 
                 if not selected_models:
                     logger.warning("No models selected to run the plugin on.")
