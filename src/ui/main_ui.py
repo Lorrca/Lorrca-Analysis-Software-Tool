@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt
 
 from src.controllers.view_controller import ViewController
 from src.ui.measurement_ui import MeasurementUI
+from src.ui.widgets.settings_dialog import ViewSettingsDialog
 
 
 class MainWindow(QMainWindow):
@@ -22,6 +23,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         self.setMinimumSize(600, 400)
 
+        self.settings_action = None
+        self.new_analysis_action = None
+
         # Set up the central widget and layout
         self.setup_central_widget()
 
@@ -37,7 +41,6 @@ class MainWindow(QMainWindow):
         central_layout.addWidget(self.stacked_widget)
 
         # Tab widget
-
         self.stacked_widget.addWidget(self.tabs)
 
         # Placeholder message when no tabs are present
@@ -63,13 +66,18 @@ class MainWindow(QMainWindow):
         file_menu = menu_bar.addMenu("File")
 
         # New Analysis action
-        new_analysis_action = QAction("New Analysis", self)
-        new_analysis_action.triggered.connect(self.create_tab)
+        self.new_analysis_action = QAction("New Analysis", self)
+        self.new_analysis_action.triggered.connect(self.create_tab)
+        self.new_analysis_action.setShortcut("Ctrl+N")
+        file_menu.addAction(self.new_analysis_action)
 
-        # Set shortcut for new analysis
-        new_analysis_action.setShortcut("Ctrl+N")
+        # Settings menu
+        self.settings_action = QAction("View Settings", self)
+        self.settings_action.triggered.connect(self.open_view_settings)
+        file_menu.addAction(self.settings_action)
 
-        file_menu.addAction(new_analysis_action)
+        # Initial state for the settings action
+        self.settings_action.setEnabled(False)  # Disable initially
 
     def create_tab(self):
         """Create a new tab."""
@@ -92,6 +100,9 @@ class MainWindow(QMainWindow):
 
         # Update the view to reflect if tabs are empty after adding
         self.update_empty_message()
+
+        # Enable the View Settings action if there is at least one tab
+        self.update_settings_action_state()
 
     def close_tab(self, index):
         """Close the tab at the given index with a confirmation dialog."""
@@ -119,9 +130,28 @@ class MainWindow(QMainWindow):
         # Update the view to reflect if tabs are empty after closing
         self.update_empty_message()
 
+        # Update the settings action state after tab removal
+        self.update_settings_action_state()
+
     def update_empty_message(self):
         """Update visibility of the empty message when there are no tabs."""
         if self.tabs.count() == 0:
             self.stacked_widget.setCurrentWidget(self.empty_message_label)
         else:
             self.stacked_widget.setCurrentWidget(self.tabs)
+
+    def update_settings_action_state(self):
+        """Enable the View Settings action if there's at least one tab, otherwise disable it."""
+        if self.tabs.count() > 0:
+            self.settings_action.setEnabled(True)
+        else:
+            self.settings_action.setEnabled(False)
+
+    def open_view_settings(self):
+        """Open the settings dialog for the currently active view."""
+        active_tab_index = self.tabs.currentIndex()
+        if active_tab_index != -1:  # Make sure there's at least one tab
+            active_ui = self.tabs.widget(active_tab_index)  # Get the current tab's UI instance
+            if hasattr(active_ui, 'controller'):
+                settings_dialog = ViewSettingsDialog(active_ui.controller, self)
+                settings_dialog.exec()
