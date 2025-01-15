@@ -92,6 +92,5 @@ class ViewSettingsDialog(QDialog):
         """Handle state change of the list item."""
         plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Retrieve the plugin ID
         selected = item.checkState() == Qt.CheckState.Checked
-        print(f"plugin selection changed to: {selected}")
         self.controller.update_plugin_selection(plugin_id, selected)
-        self.view.fetch_all_models_and_elements()
+        self.view.update_measurement_tree_widget()
