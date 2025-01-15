@@ -146,7 +146,9 @@ class MeasurementUI(QWidget):
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
     def update_measurement_tree_widget(self):
-        """Update the tree view with measurements and their elements, maintaining selection state."""
+        """
+        Update the tree view with measurements and their elements, maintaining selection state.
+        """
         # Temporarily disconnect the itemChanged signal to prevent recursion
         self.tree.itemChanged.disconnect(self.on_item_changed)
 
@@ -184,12 +186,11 @@ class MeasurementUI(QWidget):
         model_item = self.find_item_by_model_id(model.id)
 
         if model_item:
-            self._update_existing_model_item(model_item, model, is_selected,
-                                             selected_elements_before_update)
+            self._update_existing_model_item(model_item, model, selected_elements_before_update)
         else:
             self._create_new_model_item(model, is_selected, selected_elements_before_update)
 
-    def _update_existing_model_item(self, model_item, model, is_selected,
+    def _update_existing_model_item(self, model_item, model,
                                     selected_elements_before_update):
         """Update an existing model item and its elements."""
         # Preserve the selection state of the model
@@ -203,7 +204,8 @@ class MeasurementUI(QWidget):
 
         # Restore the model's checkbox state
         model_item.setCheckState(0,
-                                 Qt.CheckState.Checked if model_selected else Qt.CheckState.Unchecked)
+                                 Qt.CheckState.Checked if model_selected
+                                 else Qt.CheckState.Unchecked)
 
         # Restore the selection state of the elements
         self._restore_element_selection(model_item, model.id, selected_elements_before_update)
@@ -233,7 +235,8 @@ class MeasurementUI(QWidget):
             element_item = model_item.child(i)
             element_id = element_item.data(0, Qt.ItemDataRole.UserRole)
             element_item.setCheckState(0,
-                                       Qt.CheckState.Checked if element_id in selected_elements else Qt.CheckState.Unchecked)
+                                       Qt.CheckState.Checked if element_id in selected_elements
+                                       else Qt.CheckState.Unchecked)
 
     def find_item_by_model_id(self, model_id: str):
         """Helper function to find a tree item by model ID."""
