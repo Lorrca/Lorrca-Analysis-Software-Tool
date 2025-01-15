@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
-    QStackedWidget, QFrame, QSizePolicy, QSpacerItem
+    QStackedWidget, QFrame, QSizePolicy, QSpacerItem, QListWidgetItem
+from PySide6.QtCore import Qt
 
 
 class ViewSettingsDialog(QDialog):
-    def __init__(self, controller, parent=None):
+    def __init__(self, view, parent=None):
         super().__init__(parent)
-        self.controller = controller
+        self.view = view
+        self.controller = view.controller
         self.setWindowTitle("View Settings")
 
         # Main layout
@@ -53,6 +55,9 @@ class ViewSettingsDialog(QDialog):
         # Set the minimum size of the window
         self.setMinimumSize(400, 300)
 
+        # Update the plugin list on initialization
+        self.update_plugin_list()
+
     def show_plugins(self):
         """Show the Plugins list in the main content area."""
         self.main_content.setCurrentWidget(self.plugin_list)
@@ -60,3 +65,33 @@ class ViewSettingsDialog(QDialog):
     def show_healthy_control(self):
         """Show the Healthy Control list in the main content area."""
         self.main_content.setCurrentWidget(self.hc_list)
+
+    def update_plugin_list(self):
+        """Update the plugin list with checkboxes."""
+        self.plugin_list.clear()
+        plugins = self.controller.plugin_manager.get_plugins()
+
+        for plugin in plugins:
+            item = QListWidgetItem(plugin["name"])
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+
+            # Set the initial check state based on the plugin's selection
+            if plugin["selected"]:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+            # Connect the item state change (itemChanged signal) to the controller's method
+            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
+            self.plugin_list.addItem(item)
+
+        # Connect the itemChanged signal for all items to handle state change
+        self.plugin_list.itemChanged.connect(self.handle_item_changed)
+
+    def handle_item_changed(self, item):
+        """Handle state change of the list item."""
+        plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Retrieve the plugin ID
+        selected = item.checkState() == Qt.CheckState.Checked
+        print(f"plugin selection changed to: {selected}")
+        self.controller.update_plugin_selection(plugin_id, selected)
+        self.view.fetch_all_models_and_elements()

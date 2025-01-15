@@ -15,6 +15,7 @@ class PluginManager:
     def __init__(self, model_container):
         self.model_container = model_container
         self.plugins = {}
+        self.plugin_selection = {}  # Dictionary to store the selection state of plugins
 
     def load_plugins(self, plot_manager):
         """Loads all plugins from the plugins folder."""
@@ -39,7 +40,10 @@ class PluginManager:
                     if plugin_instance.id in self.plugins:
                         logger.warning(f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
                         return
+                    # Store plugin instance
                     self.plugins[plugin_instance.id] = plugin_instance
+                    # Set default selection state to True
+                    self.plugin_selection[plugin_instance.id] = True  # Default to selected
                     logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
                     return
         except Exception as e:
@@ -52,6 +56,7 @@ class PluginManager:
             try:
                 # Get all selected models
                 selected_models = self.model_container.get_selected_models()
+                print(selected_models)
 
                 if not selected_models:
                     logger.warning("No models selected to run the plugin on.")
@@ -65,19 +70,14 @@ class PluginManager:
             except Exception as e:
                 logger.error(f"Error running plugin {plugin.plugin_name}: {e}")
         else:
-            logger.warning(f"Plugin with ID {plugin_id} not found.")
+            logger.warning(f"Plugin with ID {plugin_id} not found or not selected.")
 
     def analyze_model(self, model_id):
         """
-        Analyzes the specified model by running all available plugins on it.
+        Analyzes the specified model by running all available selected plugins on it.
 
         Args:
         model_id (str): The unique identifier of the model to be analyzed.
-
-        Logs:
-            - Information on the successful execution of plugins.
-            - Warnings if the model is not found.
-            - Errors if a plugin fails during execution.
         """
         try:
             model = self.model_container.get_model_by_id(model_id)
@@ -85,21 +85,40 @@ class PluginManager:
                 logger.warning(f"Model with ID {model_id} not found.")
                 return
 
-            for _, plugin in self.plugins.items():
-                logger.info(f"Running plugin: {plugin.plugin_name} on model ID {model_id}")
-                try:
-                    plugin.run_plugin(model)  # Run the plugin on the model
-                    logger.info(f"Ran plugin: {plugin.plugin_name} successfully.")
-                except Exception as e:
-                    logger.error(
-                        f"Error running plugin {plugin.plugin_name} on model {model_id}: {e}")
+            for plugin_id, plugin in self.plugins.items():
+                if self.plugin_selection.get(plugin_id, False):  # Check if the plugin is selected
+                    logger.info(f"Running plugin: {plugin.plugin_name} on model ID {model_id}")
+                    try:
+                        plugin.run_plugin(model)  # Run the plugin on the model
+                        logger.info(f"Ran plugin: {plugin.plugin_name} successfully.")
+                    except Exception as e:
+                        logger.error(
+                            f"Error running plugin {plugin.plugin_name} on model {model_id}: {e}")
         except Exception as e:
             logger.error(f"Error analyzing model {model_id}: {e}")
 
     def get_all_plugin_info(self):
-        """Return a list of dictionaries containing plugin IDs and names."""
-        return [{"id": plugin.id, "name": plugin.plugin_name} for plugin in self.plugins.values()]
+        """Return a list of dictionaries containing plugin IDs, names, and selection state."""
+        return [{"id": plugin.id, "name": plugin.plugin_name,
+                 "selected": self.plugin_selection.get(plugin.id, False)}
+                for plugin in self.plugins.values()]
 
     def get_plugin_by_id(self, plugin_id):
         """Return the plugin object by its ID."""
         return self.plugins.get(plugin_id)
+
+    def set_plugin_selection(self, plugin_id, selected):
+        """Set the selection state for a plugin."""
+        if plugin_id in self.plugins:
+            self.plugin_selection[plugin_id] = selected
+            logger.info(f"Plugin {self.plugins[plugin_id].plugin_name} selection set to {selected}")
+            if selected:
+                self.run_plugin(plugin_id)
+        else:
+            logger.warning(f"Plugin with ID {plugin_id} not found.")
+
+    def get_plugins(self):
+        """Return a list of all plugins with their selection state."""
+        return [{"id": plugin.id, "name": plugin.plugin_name,
+                 "selected": self.plugin_selection.get(plugin.id, False)}
+                for plugin in self.plugins.values()]
