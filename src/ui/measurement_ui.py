@@ -18,6 +18,7 @@ class MeasurementUI(QWidget):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self.controller.register_view(self)
 
         self.main_frame = QFrame(self)
         self.main_layout = QHBoxLayout(self)
@@ -158,9 +159,17 @@ class MeasurementUI(QWidget):
         # Fetch all models with their selection state from the controller
         all_models_with_selection = self.controller.get_all_measurements_with_selection()
 
-        # Update the tree for each model
+        # Update or create tree items for each model
         for model, is_selected in all_models_with_selection:
-            self._update_or_create_model_item(model, is_selected, selected_elements_before_update)
+            model_item = self.find_item_by_model_id(model.id)
+
+            if model_item:
+                self._update_existing_model_item(model_item, model)
+            else:
+                model_item = self._create_new_model_item(model, is_selected)
+
+            # Restore selection for the model item after it's updated
+            self._restore_element_selection(model_item, model.id, selected_elements_before_update)
 
         # Refresh the canvas with the selected elements
         self.update_canvas()
@@ -169,7 +178,7 @@ class MeasurementUI(QWidget):
         self.tree.itemChanged.connect(self.on_item_changed)
 
     def _track_selected_elements(self):
-        """Track selected elements before updating the tree."""
+        """Return selected elements in the tree."""
         selected_elements = {}
         for i in range(self.tree.topLevelItemCount()):
             measurement_item = self.tree.topLevelItem(i)
@@ -186,12 +195,11 @@ class MeasurementUI(QWidget):
         model_item = self.find_item_by_model_id(model.id)
 
         if model_item:
-            self._update_existing_model_item(model_item, model, selected_elements_before_update)
+            self._update_existing_model_item(model_item, model)
         else:
-            self._create_new_model_item(model, is_selected, selected_elements_before_update)
+            self._create_new_model_item(model, is_selected)
 
-    def _update_existing_model_item(self, model_item, model,
-                                    selected_elements_before_update):
+    def _update_existing_model_item(self, model_item, model):
         """Update an existing model item and its elements."""
         # Preserve the selection state of the model
         model_selected = model_item.checkState(0) == Qt.CheckState.Checked
@@ -207,10 +215,7 @@ class MeasurementUI(QWidget):
                                  Qt.CheckState.Checked if model_selected
                                  else Qt.CheckState.Unchecked)
 
-        # Restore the selection state of the elements
-        self._restore_element_selection(model_item, model.id, selected_elements_before_update)
-
-    def _create_new_model_item(self, model, is_selected, selected_elements_before_update):
+    def _create_new_model_item(self, model, is_selected):
         """Create a new model item and add its elements."""
         model_item = QTreeWidgetItem([model.name])
         model_item.setData(0, Qt.ItemDataRole.UserRole, model.id)
@@ -224,8 +229,7 @@ class MeasurementUI(QWidget):
         model_item.setCheckState(0,
                                  Qt.CheckState.Checked if is_selected else Qt.CheckState.Unchecked)
 
-        # Restore the selection state of the elements
-        self._restore_element_selection(model_item, model.id, selected_elements_before_update)
+        return model_item
 
     @staticmethod
     def _restore_element_selection(model_item, model_id, selected_elements_before_update):

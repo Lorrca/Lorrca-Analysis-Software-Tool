@@ -16,9 +16,11 @@ class PluginManager:
         self.model_container = model_container
         self.plugins = {}
         self.plugin_selection = {}  # Dictionary to store the selection state of plugins
+        self.plot_manager = None
 
     def load_plugins(self, plot_manager):
         """Loads all plugins from the plugins folder."""
+        self.plot_manager = plot_manager
         if not os.path.isdir(PLUGINS_FOLDER):
             logger.warning(f"Plugin folder {PLUGINS_FOLDER} not found.")
             return
@@ -26,9 +28,9 @@ class PluginManager:
         for file_name in os.listdir(PLUGINS_FOLDER):
             if file_name.endswith(".py") and file_name != "__init__.py":
                 plugin_name = file_name[:-3]
-                self._load_plugin(plugin_name, plot_manager)
+                self._load_plugin(plugin_name)
 
-    def _load_plugin(self, plugin_name, plot_manager):
+    def _load_plugin(self, plugin_name):
         """Loads a single plugin by its name."""
         try:
             plugin_module = importlib.import_module(f"plugins.{plugin_name}")
@@ -36,7 +38,7 @@ class PluginManager:
                 attr = getattr(plugin_module, attr_name)
                 if isinstance(attr, type) and issubclass(attr,
                                                          BasePlugin) and attr is not BasePlugin:
-                    plugin_instance = attr(plot_manager)
+                    plugin_instance = attr(self.plot_manager)
                     if plugin_instance.id in self.plugins:
                         logger.warning(f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
                         return
@@ -113,6 +115,8 @@ class PluginManager:
             logger.info(f"Plugin {self.plugins[plugin_id].plugin_name} selection set to {selected}")
             if selected:
                 self.run_plugin(plugin_id)
+            else:
+                self.plot_manager.remove_elements_by_plugin_id(plugin_id)
         else:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
 

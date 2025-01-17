@@ -153,5 +153,5 @@ class MainWindow(QMainWindow):
         if active_tab_index != -1:  # Make sure there's at least one tab
             active_ui = self.tabs.widget(active_tab_index)  # Get the current tab's UI instance
             if hasattr(active_ui, 'controller'):
-                settings_dialog = ViewSettingsDialog(active_ui, self)
+                settings_dialog = ViewSettingsDialog(active_ui.controller, self)
                 settings_dialog.exec()

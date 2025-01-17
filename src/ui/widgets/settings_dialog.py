@@ -4,10 +4,9 @@ from PySide6.QtCore import Qt
 
 
 class ViewSettingsDialog(QDialog):
-    def __init__(self, view, parent=None):
+    def __init__(self, controller, parent=None):
         super().__init__(parent)
-        self.view = view
-        self.controller = view.controller
+        self.controller = controller
         self.setWindowTitle("View Settings")
 
         # Main layout
@@ -93,4 +92,3 @@ class ViewSettingsDialog(QDialog):
         plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Retrieve the plugin ID
         selected = item.checkState() == Qt.CheckState.Checked
         self.controller.update_plugin_selection(plugin_id, selected)
-        self.view.update_measurement_tree_widget()
