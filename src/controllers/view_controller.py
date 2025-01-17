@@ -10,10 +10,15 @@ logger = logging.getLogger(__name__)
 
 class ViewController:
     def __init__(self):
+        self.view = None
         self.model_container = ModelContainer()  # Store models and sets
         self.plot_manager = PlotManager()
         self.plugin_manager = PluginManager(self.model_container)
         self.plugin_manager.load_plugins(self.plot_manager)
+
+    def register_view(self, view):
+        """Register a view instance."""
+        self.view = view
 
     def load_files(self, file_paths):
         """Load files and delegate storage to the container, handling batch or individual processing."""
@@ -68,6 +73,14 @@ class ViewController:
         self.plot_manager.save_plot(
             filename, width, height, dpi, x_label, y_label, title
         )
+
+    def update_plugin_selection(self, plugin_id, selected):
+        self.plugin_manager.set_plugin_selection(plugin_id, selected)
+
+        if self.view:
+            self.view.update_measurement_tree_widget()
+        else:
+            logger.warning("View is not registered. Measurement tree update skipped.")
 
     def __del__(self):
         """Notify when the controller is deleted."""

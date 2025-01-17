@@ -18,6 +18,7 @@ class MeasurementUI(QWidget):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self.controller.register_view(self)
 
         self.main_frame = QFrame(self)
         self.main_layout = QHBoxLayout(self)
@@ -146,36 +147,100 @@ class MeasurementUI(QWidget):
         self.export_button.setEnabled(any(ax.has_data() for ax in self.canvas.figure.axes))
 
     def update_measurement_tree_widget(self):
-        """Update the tree widget with measurements and reset the state."""
+        """
+        Update the tree view with measurements and their elements, maintaining selection state.
+        """
         # Temporarily disconnect the itemChanged signal to prevent recursion
         self.tree.itemChanged.disconnect(self.on_item_changed)
 
-        # Populate the tree with updated data
-        measurements_with_selection = self.controller.get_all_measurements_with_selection()
+        # Track the selected state before the update
+        selected_elements_before_update = self._track_selected_elements()
 
-        # Iterate through each measurement and update its state
-        for model, selected in measurements_with_selection:
-            # Check if the model already exists in the tree (based on model.id)
-            existing_item = self.find_item_by_model_id(model.id)
+        # Fetch all models with their selection state from the controller
+        all_models_with_selection = self.controller.get_all_measurements_with_selection()
 
-            if existing_item:
-                # Update existing item (checkbox state)
-                existing_item.setCheckState(0,
-                                            Qt.CheckState.Checked if selected else
-                                            Qt.CheckState.Unchecked)
+        # Update or create tree items for each model
+        for model, is_selected in all_models_with_selection:
+            model_item = self.find_item_by_model_id(model.id)
+
+            if model_item:
+                self._update_existing_model_item(model_item, model)
             else:
-                # Create new item if it doesn't exist
-                item = QTreeWidgetItem([model.name])  # Assuming 'model.name' is the label
-                item.setData(0, Qt.ItemDataRole.UserRole,
-                             model.id)  # Store the model ID in the userRole
-                # Set checkbox state
-                item.setCheckState(0,
-                                   Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
-                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)  # Make item checkable
-                self.tree.addTopLevelItem(item)  # Add the item to the tree
+                model_item = self._create_new_model_item(model, is_selected)
 
-        # Reconnect the itemChanged signal after populating the tree
+            # Restore selection for the model item after it's updated
+            self._restore_element_selection(model_item, model.id, selected_elements_before_update)
+
+        # Refresh the canvas with the selected elements
+        self.update_canvas()
+
+        # Reconnect the itemChanged signal after updating the tree
         self.tree.itemChanged.connect(self.on_item_changed)
+
+    def _track_selected_elements(self):
+        """Return selected elements in the tree."""
+        selected_elements = {}
+        for i in range(self.tree.topLevelItemCount()):
+            measurement_item = self.tree.topLevelItem(i)
+            model_id = measurement_item.data(0, Qt.ItemDataRole.UserRole)
+            for j in range(measurement_item.childCount()):
+                element_item = measurement_item.child(j)
+                if element_item.checkState(0) == Qt.CheckState.Checked:
+                    selected_elements.setdefault(model_id, set()).add(
+                        element_item.data(0, Qt.ItemDataRole.UserRole))
+        return selected_elements
+
+    def _update_or_create_model_item(self, model, is_selected, selected_elements_before_update):
+        """Update an existing model item or create a new one."""
+        model_item = self.find_item_by_model_id(model.id)
+
+        if model_item:
+            self._update_existing_model_item(model_item, model)
+        else:
+            self._create_new_model_item(model, is_selected)
+
+    def _update_existing_model_item(self, model_item, model):
+        """Update an existing model item and its elements."""
+        # Preserve the selection state of the model
+        model_selected = model_item.checkState(0) == Qt.CheckState.Checked
+
+        # Clear current children (elements) for the model item
+        model_item.takeChildren()
+
+        # Add elements for the model from the controller
+        self.add_elements_to_tree(model_item, model.id)
+
+        # Restore the model's checkbox state
+        model_item.setCheckState(0,
+                                 Qt.CheckState.Checked if model_selected
+                                 else Qt.CheckState.Unchecked)
+
+    def _create_new_model_item(self, model, is_selected):
+        """Create a new model item and add its elements."""
+        model_item = QTreeWidgetItem([model.name])
+        model_item.setData(0, Qt.ItemDataRole.UserRole, model.id)
+        model_item.setFlags(model_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+        self.tree.addTopLevelItem(model_item)
+
+        # Add elements for the new model
+        self.add_elements_to_tree(model_item, model.id)
+
+        # Set initial checkbox state for the model
+        model_item.setCheckState(0,
+                                 Qt.CheckState.Checked if is_selected else Qt.CheckState.Unchecked)
+
+        return model_item
+
+    @staticmethod
+    def _restore_element_selection(model_item, model_id, selected_elements_before_update):
+        """Restore the selection state of elements for a model item."""
+        selected_elements = selected_elements_before_update.get(model_id, set())
+        for i in range(model_item.childCount()):
+            element_item = model_item.child(i)
+            element_id = element_item.data(0, Qt.ItemDataRole.UserRole)
+            element_item.setCheckState(0,
+                                       Qt.CheckState.Checked if element_id in selected_elements
+                                       else Qt.CheckState.Unchecked)
 
     def find_item_by_model_id(self, model_id: str):
         """Helper function to find a tree item by model ID."""
@@ -190,16 +255,27 @@ class MeasurementUI(QWidget):
             return
 
         model_id = item.data(0, Qt.ItemDataRole.UserRole)
-        is_selected = item.checkState(0) == Qt.CheckState.Checked
-        self.controller.update_model_selection(model_id, is_selected)
 
-        if is_selected:
-            self.add_elements_to_tree(item, model_id)
-        else:
-            item.takeChildren()  # Clear child elements
+        # Temporarily disconnect signal to avoid recursion during updates
+        self.tree.itemChanged.disconnect(self.on_item_changed)
 
-        # Update canvas when measurement selection changes
+        if item.parent() is None:  # It's a measurement item
+            # Update measurement selection
+            is_selected = item.checkState(0) == Qt.CheckState.Checked
+            self.controller.update_model_selection(model_id, is_selected)
+
+            if is_selected:
+                # Add elements to the tree if the model is selected
+                self.add_elements_to_tree(item, model_id)
+            else:
+                # Remove child elements when the model is deselected
+                item.takeChildren()
+
+        # Update canvas after selection change
         self.update_canvas()
+
+        # Reconnect the signal after handling the item change
+        self.tree.itemChanged.connect(self.on_item_changed)
 
     def add_elements_to_tree(self, parent_item, model_id):
         elements = self.controller.get_elements_by_model_id(model_id)
