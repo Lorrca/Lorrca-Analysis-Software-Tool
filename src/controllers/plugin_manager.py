@@ -69,7 +69,7 @@ class PluginManager:
             except Exception as e:
                 logger.error(f"Error running plugin {plugin.plugin_name}: {e}")
         else:
-            logger.warning(f"Plugin with ID {plugin_id} not found or not selected.")
+            logger.warning(f"Plugin with ID {plugin_id} not found.")
 
     def analyze_model(self, model_id):
         """
