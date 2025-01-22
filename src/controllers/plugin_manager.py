@@ -130,20 +130,22 @@ class PluginManager:
         else:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
 
-    def get_plugins(self):
-        """Return a list of all plugins with their selection state, excluding those with is_healthy_control = True."""
-        return [
-            {"id": plugin.id, "name": plugin.plugin_name,
-             "selected": self.plugin_selection.get(plugin.id, False)}
-            for plugin in self.plugins.values()
-            if isinstance(plugin, BasePlugin) and not isinstance(plugin, BaseHCPlugin)
-        ]
+    def get_plugins(self, hc_plugins=False):
+        """
+        Return a list of plugins with their selection state.
 
-    def get_hc_plugins(self):
-        """Return a list of all plugins with their selection state, excluding those with is_healthy_control = True."""
+        :param hc_plugins: If True, return only Healthy Control plugins (BaseHCPlugin).
+                           If False, return only standard plugins (BasePlugin excluding BaseHCPlugin).
+        """
+
+        def is_valid_plugin(plugin):
+            return (
+                isinstance(plugin, BaseHCPlugin) if hc_plugins
+                else isinstance(plugin, BasePlugin) and not isinstance(plugin, BaseHCPlugin)
+            )
+
         return [
             {"id": plugin.id, "name": plugin.plugin_name,
              "selected": self.plugin_selection.get(plugin.id, False)}
-            for plugin in self.plugins.values()
-            if isinstance(plugin, BaseHCPlugin)
+            for plugin in self.plugins.values() if is_valid_plugin(plugin)
         ]

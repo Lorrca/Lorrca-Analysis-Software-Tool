@@ -69,7 +69,7 @@ class ViewSettingsDialog(QDialog):
     def update_plugin_list(self):
         """Update the plugin list with checkboxes."""
         self.plugin_list.clear()
-        plugins = self.controller.plugin_manager.get_plugins()
+        plugins = self.controller.get_plugins()
 
         for plugin in plugins:
             item = QListWidgetItem(plugin["name"])
@@ -91,7 +91,7 @@ class ViewSettingsDialog(QDialog):
     def update_healthy_control_list(self):
         """Update the plugin list with checkboxes."""
         self.hc_list.clear()
-        hc_plugins = self.controller.plugin_manager.get_hc_plugins()
+        hc_plugins = self.controller.get_hc_plugins()
 
         for plugin in hc_plugins:
             item = QListWidgetItem(plugin["name"])
