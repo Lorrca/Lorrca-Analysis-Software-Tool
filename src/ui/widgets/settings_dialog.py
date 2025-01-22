@@ -56,6 +56,7 @@ class ViewSettingsDialog(QDialog):
 
         # Update the plugin list on initialization
         self.update_plugin_list()
+        self.update_healthy_control_list()
 
     def show_plugins(self):
         """Show the Plugins list in the main content area."""
@@ -86,6 +87,28 @@ class ViewSettingsDialog(QDialog):
 
         # Connect the itemChanged signal for all items to handle state change
         self.plugin_list.itemChanged.connect(self.handle_item_changed)
+
+    def update_healthy_control_list(self):
+        """Update the plugin list with checkboxes."""
+        self.hc_list.clear()
+        hc_plugins = self.controller.plugin_manager.get_hc_plugins()
+
+        for plugin in hc_plugins:
+            item = QListWidgetItem(plugin["name"])
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+
+            # Set the initial check state based on the plugin's selection
+            if plugin["selected"]:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+            # Connect the item state change (itemChanged signal) to the controller's method
+            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
+            self.hc_list.addItem(item)
+
+        # Connect the itemChanged signal for all items to handle state change
+        self.hc_list.itemChanged.connect(self.handle_item_changed)
 
     def handle_item_changed(self, item):
         """Handle state change of the list item."""

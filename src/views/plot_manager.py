@@ -2,7 +2,7 @@ import logging
 import os
 
 from matplotlib import pyplot as plt
-from src.models.plot_element import PlotElement
+from src.models.plot_element import PlotElement, CompositeLineElement
 from src.utils.plot_export_helper import save_plot_with_clone
 
 logger = logging.getLogger(__name__)
@@ -80,6 +80,10 @@ class PlotManager:
         for element_id in selected_element_ids:
             element = self.get_element_by_id(element_id)
             if element:
+                element.render(self.ax)
+
+        for element in self.elements.values():
+            if isinstance(element, CompositeLineElement):
                 element.render(self.ax)
 
         # Reapply the title, labels, and grid state
