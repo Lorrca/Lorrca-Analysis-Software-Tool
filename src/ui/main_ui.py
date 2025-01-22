@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt
 
 from src.controllers.view_controller import ViewController
 from src.ui.measurement_ui import MeasurementUI
+from src.ui.widgets.preferences_dialog import PreferencesDialog
 from src.ui.widgets.settings_dialog import ViewSettingsDialog
 
 
@@ -12,6 +13,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.preferences_action = None
         self.empty_message_label = QLabel(
             "Create a new analysis by going to File/New Analysis.", self
         )
@@ -75,6 +77,11 @@ class MainWindow(QMainWindow):
         self.settings_action = QAction("View Settings", self)
         self.settings_action.triggered.connect(self.open_view_settings)
         file_menu.addAction(self.settings_action)
+
+        #Preferences action
+        self.preferences_action = QAction("Preferences", self)
+        self.preferences_action.triggered.connect(self.open_preferences)
+        file_menu.addAction(self.preferences_action)
 
         # Initial state for the settings action
         self.settings_action.setEnabled(False)  # Disable initially
@@ -155,3 +162,7 @@ class MainWindow(QMainWindow):
             if hasattr(active_ui, 'controller'):
                 settings_dialog = ViewSettingsDialog(active_ui.controller, self)
                 settings_dialog.exec()
+
+    def open_preferences(self):
+        preferences_dialog = PreferencesDialog(self)
+        preferences_dialog.exec()
