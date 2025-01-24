@@ -57,7 +57,8 @@ class ModelContainer:
                 logger.warning(f"Failed to load model from file: {file_path}")
 
         self.single_models.update(models)
-        self._load_hc()
+        if not self.hc_models:
+            self._load_hc()
 
     def _load_hc(self):
         """Load all healthy control models from subfolders within the HC folder."""
@@ -141,29 +142,26 @@ class ModelContainer:
     def get_selected_models(self) -> List[BaseScanModel]:
         """Return a list of selected models based on the selection state."""
         selected_models = [
-            model for model, selected in self.get_all_models_with_selection()
-            if selected and self.get_model_by_id(model.id) is not None
+            model for model, selected in self.get_models_with_selection()
+            if selected
         ]
         return selected_models
 
-    def get_all_models_with_selection(self, is_hc_model=False) -> List[tuple]:
-        """
-        Return a list of tuples containing the model and its selection state.
-        If is_hc_model is True, only include BaseHCModel instances.
-        """
-        if is_hc_model:
-            return [
-                (model, self.selection_state.get(model.id, False))
-                for model in self.single_models
-                if isinstance(model, HCModel)
-            ]
-        else:
-            return [
-                (model, self.selection_state.get(model.id, False))
-                for model in self.single_models
-                if isinstance(model, BaseScanModel)
+    def get_hc_models_with_selection(self) -> List[tuple]:
+        """Return a list of HC models and their selection state."""
+        return self._get_filtered_models_with_selection(HCModel)
 
-            ]
+    def get_models_with_selection(self) -> List[tuple]:
+        """Return a list of all models and their selection state."""
+        return self._get_filtered_models_with_selection(BaseScanModel)
+
+    def _get_filtered_models_with_selection(self, model_filter) -> List[tuple]:
+        """Filter models by type and include their selection state."""
+        return [
+            (model, self.selection_state.get(model.id, False))
+            for model in self.single_models
+            if isinstance(model, model_filter)
+        ]
 
     def print_all_models(self):
         """Print all models stored in the container."""

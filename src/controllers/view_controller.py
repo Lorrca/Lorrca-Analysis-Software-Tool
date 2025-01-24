@@ -62,7 +62,7 @@ class ViewController:
         return elements
 
     def get_all_measurements_with_selection(self):
-        return self._model_container.get_all_models_with_selection()
+        return self._model_container.get_models_with_selection()
 
     def get_elements_by_model_id(self, model_id):
         return self._plot_manager.get_elements_by_model_id(model_id)
@@ -95,7 +95,7 @@ class ViewController:
         return self._plugin_manager.get_plugins(hc_plugins=True)
 
     def get_hc_models(self):
-        return self._model_container.get_all_models_with_selection(is_hc_model=True)
+        return self._model_container.get_hc_models_with_selection()
 
     def __del__(self):
         """Notify when the controller is deleted."""

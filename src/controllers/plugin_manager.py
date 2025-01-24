@@ -66,7 +66,10 @@ class PluginManager:
                     # Store plugin instance
                     self.plugins[plugin_instance.id] = plugin_instance
                     # Set default selection state to True
-                    self.plugin_selection[plugin_instance.id] = True
+                    if isinstance(plugin_instance, BaseHCPlugin):
+                        self.plugin_selection[plugin_instance.id] = False
+                    else:
+                        self.plugin_selection[plugin_instance.id] = True
                     logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
                     return
         except Exception as e:
