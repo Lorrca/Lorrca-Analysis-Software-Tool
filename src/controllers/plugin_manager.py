@@ -51,7 +51,7 @@ class PluginManager:
                         return
                     # Store plugin instance
                     self.plugins[plugin_instance.id] = plugin_instance
-                    # Set default selection state to False
+                    # Set default selection state to True
                     self.plugin_selection[plugin_instance.id] = True
                     logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
                     return
