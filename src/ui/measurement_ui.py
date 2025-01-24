@@ -44,7 +44,8 @@ class MeasurementUI(QWidget):
         self.left_layout = QVBoxLayout(left_frame)
 
         # Create the canvas for the plot
-        self.canvas = FigureCanvas()  # Initialize with an empty canvas
+        self.canvas = FigureCanvas(
+            self.controller.get_updated_canvas([]))  # Initialize with an empty canvas
 
         # Create a navigation toolbar for interactivity (zoom, pan, etc.)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
