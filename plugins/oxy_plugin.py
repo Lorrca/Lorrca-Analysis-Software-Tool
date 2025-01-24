@@ -8,7 +8,7 @@ class OxyPlugin(BasePlugin):
 
     def run_plugin(self, model):
         """Main entry point for the plugin."""
-        self.model = model
+        self.set_model(model)
         self.raw_po2_vs_ei()
 
     def raw_po2_vs_ei(self):

@@ -10,7 +10,7 @@ class OsmoExamplePlugin(BasePlugin):
         return "Osmo Example Plugin"
 
     def run_plugin(self, model):
-        self.model = model
+        self.set_model(model)
         o = self.model.O
         ei = self.model.EI
 

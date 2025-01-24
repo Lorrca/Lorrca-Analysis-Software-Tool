@@ -1,6 +1,8 @@
 import uuid
 from abc import ABC, abstractmethod
 
+from matplotlib.colors import LinearSegmentedColormap
+
 
 # Base class for plot elements
 class PlotElement(ABC):
@@ -70,3 +72,31 @@ class ScatterElement(PlotElement):
 
     def render(self, ax):
         ax.scatter(self.x, self.y, label=self.label, **self.kwargs)
+
+
+class CompositeLineElement(PlotElement):
+    def __init__(self, lines: list[tuple], label, plugin, model, **kwargs):
+        super().__init__(label, plugin, model, **kwargs)
+        self.lines = lines
+
+        # Create a pastel rainbow color map
+        self.cmap = LinearSegmentedColormap.from_list("pastel_rainbow",
+                                                     ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF"])
+
+    def render(self, ax):
+        num_lines = len(self.lines)
+
+        for i, (x, y) in enumerate(self.lines):
+            # Calculate the color based on the line index for smooth transition
+            color = self.cmap(i / num_lines)  # Normalize to [0, 1] for the gradient effect
+
+            kwargs = self.kwargs.copy()
+            kwargs["color"] = color
+            kwargs["zorder"] = -1  # Always render in the background
+
+            if i == 0:
+                kwargs["label"] = self.label
+            else:
+                kwargs["label"] = "_nolegend_"
+
+            ax.plot(x, y, **kwargs)

@@ -1,7 +1,9 @@
 import logging
+import os
 from typing import Set, List, Union, Optional
 
 from src.base_classes.base_scan_model import BaseScanModel
+from src.models.hc_model import HCModel
 from src.models.osmo_model import OsmoModel
 from src.models.osmo_data_loader import OsmoDataLoader
 from src.models.oxy_data_loader import OxyDataLoader
@@ -18,6 +20,7 @@ class ModelContainer:
         self.loader: Optional[Union[OsmoDataLoader, OxyDataLoader]] = None  # Current loader
         self.single_models: Set[BaseScanModel] = set()  # Set of loaded models
         self.selection_state: dict[str, bool] = {}  # Track selection state by model ID
+        self.hc_model = HCModel(name="Healthy Control")
         self.model_type = None  # Model type (either OsmoModel or OxyModel)
 
     def determine_loader(self, file_path: str) -> Union[
@@ -53,6 +56,24 @@ class ModelContainer:
                 logger.warning(f"Failed to load model from file: {file_path}")
 
         self.single_models.update(models)
+        self._load_hc()
+
+    def _load_hc(self):
+        """Load all healthy control models from the HC folder into the HC_Model."""
+        HC_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), '../HC')
+
+        if not os.path.isdir(HC_FOLDER):
+            logger.error(f"HC folder is not a directory: {HC_FOLDER}")
+            return
+
+        for file_name in os.listdir(HC_FOLDER):
+            file_path = os.path.join(HC_FOLDER, file_name)
+            if os.path.isfile(file_path) and file_path.endswith(".CSV"):
+                model = self._load_data(file_path)
+                if model:
+                    self.hc_model.add_model(model)
+                else:
+                    logger.warning(f"Failed to load model from file: {file_path}")
 
     def _load_data(self, file_path: str) -> Optional[BaseScanModel]:
         """Load a model based on the file using the determined loader and delimiter."""
@@ -70,11 +91,6 @@ class ModelContainer:
         except Exception as e:
             logger.error(f"Error loading data from {file_path}: {e}")
             return None
-
-    def add_single_model(self, model: BaseScanModel):
-        """Add a single model to the container."""
-        self.single_models.add(model)
-        logger.info(f"Model added with ID: {model.id}")
 
     def get_model_by_id(self, model_id: str) -> Optional[BaseScanModel]:
         """Retrieve a model by its ID."""

@@ -9,7 +9,7 @@ class PolynomialPlugin(BasePlugin):
 
     def run_plugin(self, model):
         """Implement the plugin's main functionality."""
-        self.model = model
+        self.set_model(model)
 
         self._polynomial_curve()
 
