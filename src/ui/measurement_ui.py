@@ -44,8 +44,7 @@ class MeasurementUI(QWidget):
         self.left_layout = QVBoxLayout(left_frame)
 
         # Create the canvas for the plot
-        self.canvas = FigureCanvas(
-            self.controller.get_updated_canvas([]))  # Initialize with an empty canvas
+        self.canvas = FigureCanvas()  # Initialize with an empty canvas
 
         # Create a navigation toolbar for interactivity (zoom, pan, etc.)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
@@ -114,7 +113,7 @@ class MeasurementUI(QWidget):
 
     def load_files(self, file_paths):
         """Load files and delegate storage to the controller."""
-        if self.controller.load_files(file_paths):
+        if self.controller.initial_file_load(file_paths):
             self.setup_main_layout()
             self.update_measurement_tree_widget()
         else:
@@ -150,9 +149,7 @@ class MeasurementUI(QWidget):
         """
         Update the tree view with measurements and their elements, maintaining selection state.
         """
-        # Temporarily disconnect the itemChanged signal to prevent recursion
         self.tree.itemChanged.disconnect(self.on_item_changed)
-
         # Track the selected state before the update
         selected_elements_before_update = self._track_selected_elements()
 

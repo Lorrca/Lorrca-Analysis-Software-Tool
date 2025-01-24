@@ -1,7 +1,11 @@
 from numpy import polyfit, polyval, linspace
 from src.base_classes.base_plugin import BasePlugin
 
+from src.enums.enums import PluginType
+from src.enums.plugin_decorators import plugin_type
 
+
+@plugin_type(PluginType.OSMO)
 class PolynomialPlugin(BasePlugin):
     @property
     def plugin_name(self):

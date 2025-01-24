@@ -1,18 +1,13 @@
 from src.base_classes.base_hc_plugin import BaseHCPlugin
-
 from src.enums.enums import PluginType
 from src.enums.plugin_decorators import plugin_type
 
 
-@plugin_type(PluginType.OSMO)
+@plugin_type(PluginType.OXY)
 class OsmoHealthControl(BaseHCPlugin):
     @property
     def plugin_name(self):
-        return "Osmo_hc"
-
-    @property
-    def is_healthy_control(self) -> bool:
-        return True
+        return "Oxy_hc"
 
     def run_plugin(self, model):
         """Main entry point for the plugin."""
@@ -24,6 +19,6 @@ class OsmoHealthControl(BaseHCPlugin):
         lines = []
 
         for model in self.model.models:
-            lines.append((model.O, model.EI))
+            lines.append((model.pO2, model.EI))
 
         self.add_composite_line_element(lines, label="Combined pO2 vs EI")
