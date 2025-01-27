@@ -83,12 +83,6 @@ class ModelContainer:
             logger.warning(f"No valid CSV files found in folder: {folder_path}")
             return
 
-        first_model = self._load_data(first_file_path)
-        if not first_model:
-            logger.warning(
-                f"First file in folder {folder_path} is not a valid model. Skipping folder.")
-            return
-
         hc_model = HCModel(name=folder_name)
 
         self._process_files_in_folder(folder_path, hc_model)
