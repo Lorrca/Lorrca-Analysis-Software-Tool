@@ -50,7 +50,7 @@ class PluginManager:
                 ):
                     plugin_instance = attr(self.plot_manager)
 
-                    # Example filter for plugins based on type
+                    # Filter for plugins based on type of the measurements eg. Osmo, Oxy .etc
                     if self.model_container.model_type.value != plugin_instance.plugin_type.value:
                         logger.info(
                             f"Skipping plugin {plugin_instance.plugin_name} "
