@@ -13,6 +13,9 @@ class HCModel:
     models_selection: dict[str, bool] = field(default_factory=dict)
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
+    def is_empty(self) -> bool:
+        return not bool(self.models)
+
     def add_model(self, model: BaseScanModel):
         if model not in self.models:
             self.models.append(model)

@@ -87,6 +87,10 @@ class ModelContainer:
 
         self._process_files_in_folder(folder_path, hc_model)
 
+        if hc_model.is_empty():
+            logger.info(f"No valid CSV files found in folder: {folder_path}. Skipping...")
+            return
+
         # Add the HCModel to the main collection
         self.hc_models.add(hc_model)
 
