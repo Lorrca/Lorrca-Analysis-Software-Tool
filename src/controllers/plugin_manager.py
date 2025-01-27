@@ -5,6 +5,9 @@ import os
 
 from src.base_classes.base_hc_plugin import BaseHCPlugin
 from src.base_classes.base_plugin import BasePlugin
+from src.enums.enums import PluginType
+from src.models.osmo_model import OsmoModel
+from src.models.oxy_model import OxyModel
 
 PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               '../plugins')
@@ -46,42 +49,63 @@ class PluginManager:
                         and not inspect.isabstract(attr)
                 ):
                     plugin_instance = attr(self.plot_manager)
+
+                    # Filter for plugins based on type of the measurements eg. Osmo, Oxy .etc
+                    if self.model_container.model_type.value != plugin_instance.plugin_type.value:
+                        logger.info(
+                            f"Skipping plugin {plugin_instance.plugin_name} "
+                            f"due to type mismatch: {plugin_instance.plugin_type} "
+                            f"{self.model_container.model_type}"
+                        )
+                        return
+
                     if plugin_instance.id in self.plugins:
                         logger.warning(f"Duplicate plugin ID {plugin_instance.id}. Skipping...")
                         return
+
                     # Store plugin instance
                     self.plugins[plugin_instance.id] = plugin_instance
                     # Set default selection state to True
-                    self.plugin_selection[plugin_instance.id] = True
+                    if isinstance(plugin_instance, BaseHCPlugin):
+                        self.plugin_selection[plugin_instance.id] = False
+                    else:
+                        self.plugin_selection[plugin_instance.id] = True
                     logger.info(f"Loaded plugin {plugin_instance.plugin_name}")
                     return
         except Exception as e:
             logger.error(f"Error loading plugin {plugin_name}: {e}")
 
     def run_plugin(self, plugin_id):
-        """Run the plugin for each selected model."""
-        plugin = self.plugins.get(plugin_id)
-        if plugin:
-            try:
-                if isinstance(plugin, BaseHCPlugin):
-                    # Run the plugin with the healthy control model
-                    plugin.run_plugin(self.model_container.hc_model)
-                elif isinstance(plugin, BasePlugin):
-                    # Get all selected models
-                    selected_models = self.model_container.get_selected_models()
-                    if not selected_models:
-                        logger.warning("No models selected to run the plugin on.")
-                        return
-
-                    # Pass the selected models to the plugin's `run_plugin` method
-                    for model in selected_models:
-                        plugin.run_plugin(model)
-
-                    logger.info(f"Ran plugin: {plugin.plugin_name} on selected models.")
-            except Exception as e:
-                logger.error(f"Error running plugin {plugin.plugin_name}: {e}")
-        else:
+        """Run the plugin_instance for each selected model."""
+        plugin_instance = self.plugins.get(plugin_id)
+        if not plugin_instance:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
+            return
+
+        try:
+            if isinstance(plugin_instance, BaseHCPlugin):
+                self._run_hc_plugin(plugin_instance)
+            elif isinstance(plugin_instance, BasePlugin):
+                self._run_base_plugin(plugin_instance)
+        except Exception as e:
+            logger.error(f"Error running plugin_instance {plugin_instance.plugin_name}: {e}")
+
+    def _run_hc_plugin(self, plugin_instance):
+        """Run the HC plugin for all HC models."""
+        for hc_model in self.model_container.hc_models:
+            plugin_instance.run_plugin(hc_model)
+
+    def _run_base_plugin(self, plugin_instance):
+        """Run the base plugin for selected models."""
+        selected_models = self.model_container.get_selected_models()
+        if not selected_models:
+            logger.warning("No models selected to run the plugin on.")
+            return
+
+        for model in selected_models:
+            plugin_instance.run_plugin(model)
+
+        logger.info(f"Ran plugin: {plugin_instance.plugin_name} on selected models.")
 
     def analyze_model(self, model_id):
         """
@@ -96,15 +120,21 @@ class PluginManager:
                 logger.warning(f"Model with ID {model_id} not found.")
                 return
 
+            plugin_filter = None
+            if isinstance(model, OsmoModel):
+                plugin_filter = PluginType.OSMO
+            elif isinstance(model, OxyModel):
+                plugin_filter = PluginType.OXY
             for plugin_id, plugin in self.plugins.items():
                 if self.plugin_selection.get(plugin_id, False):  # Check if the plugin is selected
-                    logger.info(f"Running plugin: {plugin.plugin_name} on model ID {model_id}")
-                    try:
-                        plugin.run_plugin(model)  # Run the plugin on the model
-                        logger.info(f"Ran plugin: {plugin.plugin_name} successfully.")
-                    except Exception as e:
-                        logger.error(
-                            f"Error running plugin {plugin.plugin_name} on model {model_id}: {e}")
+                    if plugin_filter and plugin.plugin_type == plugin_filter:
+                        logger.info(f"Running plugin: {plugin.plugin_name} on model ID {model_id}")
+                        try:
+                            plugin.run_plugin(model)  # Run the plugin on the model
+                            logger.info(f"Ran plugin: {plugin.plugin_name} successfully.")
+                        except Exception as e:
+                            logger.error(
+                                f"Error running plugin {plugin.plugin_name} on model {model_id}: {e}")
         except Exception as e:
             logger.error(f"Error analyzing model {model_id}: {e}")
 

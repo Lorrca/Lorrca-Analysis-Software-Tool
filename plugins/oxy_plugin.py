@@ -1,6 +1,9 @@
 from src.base_classes.base_plugin import BasePlugin
+from src.enums.enums import PluginType
+from src.enums.plugin_decorators import plugin_type
 
 
+@plugin_type(PluginType.OXY)
 class OxyPlugin(BasePlugin):
     @property
     def plugin_name(self):

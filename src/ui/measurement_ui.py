@@ -25,7 +25,7 @@ class MeasurementUI(QWidget):
         self.main_layout.addWidget(self.main_frame)
         self.setLayout(self.main_layout)
 
-        self.drag_drop_widget = DragDropWidget(self.load_files)  # Existing drag and drop widget
+        self.drag_drop_widget = DragDropWidget(self.initial_file_load)  # Existing drag and drop widget
         self.main_frame_layout = QStackedLayout(self.main_frame)
         self.main_frame_layout.addWidget(self.drag_drop_widget)
 
@@ -112,9 +112,9 @@ class MeasurementUI(QWidget):
         self.main_frame_layout.addWidget(main_widget)
         self.main_frame_layout.setCurrentWidget(main_widget)
 
-    def load_files(self, file_paths):
+    def initial_file_load(self, file_paths):
         """Load files and delegate storage to the controller."""
-        if self.controller.load_files(file_paths):
+        if self.controller.initial_file_load(file_paths):
             self.setup_main_layout()
             self.update_measurement_tree_widget()
         else:
@@ -150,9 +150,7 @@ class MeasurementUI(QWidget):
         """
         Update the tree view with measurements and their elements, maintaining selection state.
         """
-        # Temporarily disconnect the itemChanged signal to prevent recursion
         self.tree.itemChanged.disconnect(self.on_item_changed)
-
         # Track the selected state before the update
         selected_elements_before_update = self._track_selected_elements()
 

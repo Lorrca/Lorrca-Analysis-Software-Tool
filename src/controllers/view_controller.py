@@ -14,11 +14,19 @@ class ViewController:
         self._model_container = ModelContainer()  # Store models and sets
         self._plot_manager = PlotManager()
         self._plugin_manager = PluginManager(self._model_container)
-        self._plugin_manager.load_plugins(self._plot_manager)
 
     def register_view(self, view):
         """Register a view instance."""
         self.view = view
+
+    def initial_file_load(self, file_paths):
+        try:
+            self._model_container.load_files(file_paths)
+            self._plugin_manager.load_plugins(self._plot_manager)
+            return True
+        except Exception as e:
+            logger.error(f"Error during loading files: {e}")
+            return False
 
     def load_files(self, file_paths):
         """Load files and delegate storage to the container, handling batch or individual processing."""
@@ -26,8 +34,6 @@ class ViewController:
             # Process each file individually
             self._model_container.load_files(file_paths)
 
-            # Print all models after loading
-            self._model_container.print_all_models()
             return True
         except Exception as e:
             logger.error(f"Error during loading files: {e}")
@@ -56,7 +62,7 @@ class ViewController:
         return elements
 
     def get_all_measurements_with_selection(self):
-        return self._model_container.get_all_models_with_selection()
+        return self._model_container.get_models_with_selection()
 
     def get_elements_by_model_id(self, model_id):
         return self._plot_manager.get_elements_by_model_id(model_id)
@@ -86,7 +92,10 @@ class ViewController:
         return self._plugin_manager.get_plugins()
 
     def get_hc_plugins(self):
-        return self._plugin_manager.get_plugins(True)
+        return self._plugin_manager.get_plugins(hc_plugins=True)
+
+    def get_hc_models(self):
+        return self._model_container.get_hc_models_with_selection()
 
     def __del__(self):
         """Notify when the controller is deleted."""
