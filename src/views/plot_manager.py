@@ -2,7 +2,7 @@ import logging
 import os
 
 from matplotlib import pyplot as plt
-from src.models.plot_element import PlotElement, CompositeLineElement
+from src.models.plot_element import PlotElement
 from src.utils.plot_export_helper import save_plot_with_clone
 
 logger = logging.getLogger(__name__)
@@ -76,15 +76,16 @@ class PlotManager:
 
         self.ax.clear()
 
-        # Visualize only the selected elements
-        for element_id in selected_element_ids:
-            element = self.get_element_by_id(element_id)
-            if element:
-                element.render(self.ax)
+        # Collect elements that should be rendered
+        elements_to_render = [self.get_element_by_id(eid) for eid in selected_element_ids if
+                              self.get_element_by_id(eid)]
 
-        for element in self.elements.values():
-            if isinstance(element, CompositeLineElement):
-                element.render(self.ax)
+        # Always render HC elements
+        always_visible_elements = [element for element in self.elements.values() if element.is_hc]
+
+        # Render all elements
+        for element in elements_to_render + always_visible_elements:
+            element.render(self.ax)
 
         # Reapply the title, labels, and grid state
         self.ax.set_title(title)

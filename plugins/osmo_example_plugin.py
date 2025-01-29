@@ -52,19 +52,19 @@ class OsmoExamplePlugin(BasePlugin):
 
     # Draw EI max
     def draw_ei_max(self, o_max, ei_max):
-        self.add_point_element(o_max, ei_max, label="EI max")
+        self.add_point_element(o_max, ei_max, label=f"EI max - {ei_max}")
 
     # Draw hyper point
     def draw_hyper(self, o_hyper, ei_hyper):
-        self.add_point_element(o_hyper, ei_hyper, label="Hyper")
+        self.add_point_element(o_hyper, ei_hyper, label=f"Hyper - {ei_hyper}")
 
     # Draw first prominent peak
     def draw_first_peak(self, o_first_peak, ei_first_peak):
-        self.add_point_element(o_first_peak, ei_first_peak, label="First Peak")
+        self.add_point_element(o_first_peak, ei_first_peak, label=f"First Peak - {ei_first_peak}")
 
     # Draw valley
     def draw_valley(self, o_min, ei_min):
-        self.add_point_element(o_min, ei_min, label="Valley")
+        self.add_point_element(o_min, ei_min, label=f"Valley - {ei_min}")
 
     # Draw area between limits
     def draw_area(self, o_segment, ei_segment, area):

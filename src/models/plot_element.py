@@ -12,6 +12,7 @@ class PlotElement(ABC):
         self.plugin = plugin
         self.model = model
         self.kwargs = kwargs
+        self.is_hc = False
 
     @abstractmethod
     def render(self, ax):
@@ -47,6 +48,8 @@ class LineElement(PlotElement):
         self.y = y
 
     def render(self, ax):
+        if self.is_hc:
+            self.kwargs["zorder"] = -1
         ax.plot(self.x, self.y, label=self.label, **self.kwargs)
 
 
@@ -59,6 +62,8 @@ class AreaElement(PlotElement):
         self.y2 = y2
 
     def render(self, ax):
+        if self.is_hc:
+            self.kwargs["zorder"] = -1
         ax.fill_between(self.x, self.y1, self.y2, label=self.label,
                         **self.kwargs)
 
@@ -71,6 +76,8 @@ class ScatterElement(PlotElement):
         self.y = y
 
     def render(self, ax):
+        if self.is_hc:
+            self.kwargs["zorder"] = -1
         ax.scatter(self.x, self.y, label=self.label, **self.kwargs)
 
 
@@ -79,20 +86,15 @@ class CompositeLineElement(PlotElement):
         super().__init__(label, plugin, model, **kwargs)
         self.lines = lines
 
-        # Create a pastel rainbow color map
-        self.cmap = LinearSegmentedColormap.from_list("pastel_rainbow",
-                                                     ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF"])
-
     def render(self, ax):
-        num_lines = len(self.lines)
-
         for i, (x, y) in enumerate(self.lines):
-            # Calculate the color based on the line index for smooth transition
-            color = self.cmap(i / num_lines)  # Normalize to [0, 1] for the gradient effect
-
             kwargs = self.kwargs.copy()
-            kwargs["color"] = color
-            kwargs["zorder"] = -1  # Always render in the background
+
+            # If it's an HC element, set the color to grey
+            if self.is_hc:
+                color = "grey"  # Make HC lines grey
+                kwargs["color"] = color
+                kwargs["zorder"] = -1  # Always render in the background
 
             if i == 0:
                 kwargs["label"] = self.label

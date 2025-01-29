@@ -5,9 +5,8 @@ import os
 
 from src.base_classes.base_hc_plugin import BaseHCPlugin
 from src.base_classes.base_plugin import BasePlugin
-from src.enums.enums import PluginType
-from src.models.osmo_model import OsmoModel
-from src.models.oxy_model import OxyModel
+from src.base_classes.base_scan_model import BaseScanModel
+from src.models.hc_model import HCModel
 
 PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               '../plugins')
@@ -92,8 +91,15 @@ class PluginManager:
 
     def _run_hc_plugin(self, plugin_instance):
         """Run the HC plugin for all HC models."""
-        for hc_model in self.model_container.hc_models:
+        selected_models = self.model_container.get_hc_selected_models()
+        if not selected_models:
+            logger.warning("No models selected to run the plugin on.")
+            return
+
+        for hc_model in selected_models:
             plugin_instance.run_plugin(hc_model)
+
+        logger.info(f"Ran plugin: {plugin_instance.plugin_name} on selected models.")
 
     def _run_base_plugin(self, plugin_instance):
         """Run the base plugin for selected models."""
@@ -107,7 +113,7 @@ class PluginManager:
 
         logger.info(f"Ran plugin: {plugin_instance.plugin_name} on selected models.")
 
-    def analyze_model(self, model_id):
+    def analyze_model(self, model_id: str):
         """
         Analyzes the specified model by running all available selected plugins on it.
 
@@ -115,19 +121,27 @@ class PluginManager:
         model_id (str): The unique identifier of the model to be analyzed.
         """
         try:
+            # Retrieve the model using its ID
             model = self.model_container.get_model_by_id(model_id)
             if not model:
                 logger.warning(f"Model with ID {model_id} not found.")
                 return
 
-            plugin_filter = None
-            if isinstance(model, OsmoModel):
-                plugin_filter = PluginType.OSMO
-            elif isinstance(model, OxyModel):
-                plugin_filter = PluginType.OXY
+            # Determine the plugin type based on the model type
+            plugin_class = None
+            if isinstance(model, HCModel):
+                plugin_class = BaseHCPlugin
+            elif isinstance(model, BaseScanModel):
+                plugin_class = BasePlugin
+
+            if plugin_class is None:
+                logger.warning(f"Unsupported model type for model ID {model_id}.")
+                return
+
+            # Iterate through the plugins and run the selected ones that match the plugin class
             for plugin_id, plugin in self.plugins.items():
                 if self.plugin_selection.get(plugin_id, False):  # Check if the plugin is selected
-                    if plugin_filter and plugin.plugin_type == plugin_filter:
+                    if isinstance(plugin, plugin_class):
                         logger.info(f"Running plugin: {plugin.plugin_name} on model ID {model_id}")
                         try:
                             plugin.run_plugin(model)  # Run the plugin on the model

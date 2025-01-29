@@ -1,5 +1,9 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
-    QStackedWidget, QFrame, QSizePolicy, QSpacerItem, QListWidgetItem
+from functools import partial
+
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget,
+    QStackedWidget, QFrame, QSizePolicy, QSpacerItem, QListWidgetItem, QLabel, QWidget
+)
 from PySide6.QtCore import Qt
 
 
@@ -47,24 +51,47 @@ class ViewSettingsDialog(QDialog):
         self.plugin_list = QListWidget(self)
         self.main_content.addWidget(self.plugin_list)
 
-        # Healthy Control list (will be shown in main content area when HC is selected)
-        self.hc_list = QListWidget(self)
-        self.main_content.addWidget(self.hc_list)
+        # Healthy Control section
+        self.hc_widget = QWidget()
+        self.hc_layout = QVBoxLayout(self.hc_widget)
+
+        # HC Plugins list
+        self.hc_plugins_label = QLabel("HC Plugins", self.hc_widget)
+        self.hc_layout.addWidget(self.hc_plugins_label)
+
+        self.hc_plugins_list = QListWidget(self.hc_widget)
+        self.hc_layout.addWidget(self.hc_plugins_list)
+
+        # HC Models list
+        self.hc_models_label = QLabel("HC Models", self.hc_widget)
+        self.hc_layout.addWidget(self.hc_models_label)
+
+        self.hc_models_list = QListWidget(self.hc_widget)
+        self.hc_layout.addWidget(self.hc_models_list)
+
+        # "Update Canvas" button
+        self.update_canvas_button = QPushButton("Update Canvas", self.hc_widget)
+        self.update_canvas_button.clicked.connect(self.update_canvas)
+        self.hc_layout.addWidget(self.update_canvas_button)
+
+        # Add HC section to the main content area
+        self.main_content.addWidget(self.hc_widget)
 
         # Set the minimum size of the window
         self.setMinimumSize(400, 300)
 
         # Update the plugin list on initialization
         self.update_plugin_list()
-        self.update_healthy_control_list()
 
     def show_plugins(self):
         """Show the Plugins list in the main content area."""
+        self.update_plugin_list()
         self.main_content.setCurrentWidget(self.plugin_list)
 
     def show_healthy_control(self):
-        """Show the Healthy Control list in the main content area."""
-        self.main_content.setCurrentWidget(self.hc_list)
+        """Show the Healthy Control section in the main content area."""
+        self.update_healthy_control_lists()
+        self.main_content.setCurrentWidget(self.hc_widget)
 
     def update_plugin_list(self):
         """Update the plugin list with checkboxes."""
@@ -76,42 +103,53 @@ class ViewSettingsDialog(QDialog):
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
 
             # Set the initial check state based on the plugin's selection
-            if plugin["selected"]:
-                item.setCheckState(Qt.CheckState.Checked)
-            else:
-                item.setCheckState(Qt.CheckState.Unchecked)
-
-            # Connect the item state change (itemChanged signal) to the controller's method
+            item.setCheckState(
+                Qt.CheckState.Checked if plugin["selected"] else Qt.CheckState.Unchecked)
             item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
             self.plugin_list.addItem(item)
 
-        # Connect the itemChanged signal for all items to handle state change
-        self.plugin_list.itemChanged.connect(self.handle_item_changed)
+        self.plugin_list.itemChanged.connect(self.handle_plugin_item_changed)
 
-    def update_healthy_control_list(self):
-        """Update the plugin list with checkboxes."""
-        self.hc_list.clear()
+    def update_healthy_control_lists(self):
+        """Update the HC Plugins and Models lists with checkboxes."""
+        self.hc_plugins_list.clear()
+        self.hc_models_list.clear()
+
+        # Update HC Plugins
         hc_plugins = self.controller.get_hc_plugins()
-
         for plugin in hc_plugins:
             item = QListWidgetItem(plugin["name"])
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(
+                Qt.CheckState.Checked if plugin["selected"] else Qt.CheckState.Unchecked)
+            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])
+            self.hc_plugins_list.addItem(item)
 
-            # Set the initial check state based on the plugin's selection
-            if plugin["selected"]:
-                item.setCheckState(Qt.CheckState.Checked)
-            else:
-                item.setCheckState(Qt.CheckState.Unchecked)
+        # Update HC Models
+        hc_models = self.controller.get_hc_models()
+        for model, selected in hc_models:
+            item = QListWidgetItem(model.name)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
+            item.setData(Qt.ItemDataRole.UserRole, model.id)
+            self.hc_models_list.addItem(item)
 
-            # Connect the item state change (itemChanged signal) to the controller's method
-            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
-            self.hc_list.addItem(item)
+        self.hc_plugins_list.itemChanged.connect(
+            partial(self.handle_plugin_item_changed, is_hc=True))
+        self.hc_models_list.itemChanged.connect(self.handle_model_item_changed)
 
-        # Connect the itemChanged signal for all items to handle state change
-        self.hc_list.itemChanged.connect(self.handle_item_changed)
-
-    def handle_item_changed(self, item):
-        """Handle state change of the list item."""
-        plugin_id = item.data(Qt.ItemDataRole.UserRole)  # Retrieve the plugin ID
+    def handle_model_item_changed(self, item):
+        model_id = item.data(Qt.ItemDataRole.UserRole)
         selected = item.checkState() == Qt.CheckState.Checked
-        self.controller.update_plugin_selection(plugin_id, selected)
+        self.controller.update_model_selection(model_id, selected)
+
+    def handle_plugin_item_changed(self, item, is_hc=False):
+        """Handle state change of the plugin list item."""
+        plugin_id = item.data(Qt.ItemDataRole.UserRole)
+        selected = item.checkState() == Qt.CheckState.Checked
+        self.controller.update_plugin_selection(plugin_id, selected, is_hc)
+
+    def update_canvas(self):
+        """Handle the Update Canvas button click."""
+        # Logic to update the canvas goes here
+        self.controller.update_canvas()

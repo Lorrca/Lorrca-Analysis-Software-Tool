@@ -67,6 +67,16 @@ class ViewController:
     def get_elements_by_model_id(self, model_id):
         return self._plot_manager.get_elements_by_model_id(model_id)
 
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+        """Delegate the save plot operation to PlotManager."""
+        self._plot_manager.save_plot(
+            filename, width, height, dpi, x_label, y_label, title
+        )
+
+    def update_canvas(self):
+        if self.view:
+            self.view.update_canvas()
+
     def update_model_selection(self, model_id, selected):
         self._model_container.update_selection(model_id, selected)
         if selected:
@@ -74,17 +84,12 @@ class ViewController:
         else:
             self._plot_manager.remove_elements_by_model_id(model_id)
 
-    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
-        """Delegate the save plot operation to PlotManager."""
-        self._plot_manager.save_plot(
-            filename, width, height, dpi, x_label, y_label, title
-        )
-
-    def update_plugin_selection(self, plugin_id, selected):
+    def update_plugin_selection(self, plugin_id, selected, is_hc=False):
         self._plugin_manager.set_plugin_selection(plugin_id, selected)
 
         if self.view:
-            self.view.update_measurement_tree_widget()
+            if not is_hc:
+                self.view.update_measurement_tree_widget()
         else:
             logger.warning("View is not registered. Measurement tree update skipped.")
 

@@ -127,9 +127,12 @@ class ModelContainer:
             logger.error(f"Error loading data from {file_path}: {e}")
             return None
 
-    def get_model_by_id(self, model_id: str) -> Optional[BaseScanModel]:
-        """Retrieve a model by its ID."""
-        return next((model for model in self.single_models if model.id == model_id), None)
+    def get_model_by_id(self, model_id: str) -> BaseScanModel | HCModel | None:
+        """Retrieve a model by its ID from single_models or hc_models."""
+        return next(
+            (model for model in self.single_models | self.hc_models if model.id == model_id),
+            None
+        )
 
     def update_selection(self, model_id: str, selected: bool):
         """Update the selection state for a given model."""
@@ -145,20 +148,25 @@ class ModelContainer:
         ]
         return selected_models
 
+    def get_hc_selected_models(self) -> List[HCModel]:
+        selected_models = [
+            model for model, selected in self.get_hc_models_with_selection()
+            if selected
+        ]
+        return selected_models
+
     def get_hc_models_with_selection(self) -> List[tuple]:
         """Return a list of HC models and their selection state."""
-        return self._get_filtered_models_with_selection(HCModel)
+        return [
+            (model, self.selection_state.get(model.id, False))
+            for model in self.hc_models
+        ]
 
     def get_models_with_selection(self) -> List[tuple]:
-        """Return a list of all models and their selection state."""
-        return self._get_filtered_models_with_selection(BaseScanModel)
-
-    def _get_filtered_models_with_selection(self, model_filter) -> List[tuple]:
-        """Filter models by type and include their selection state."""
+        """Return a list of all single models and their selection state."""
         return [
             (model, self.selection_state.get(model.id, False))
             for model in self.single_models
-            if isinstance(model, model_filter)
         ]
 
     def print_all_models(self):

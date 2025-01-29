@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         self.settings_action.triggered.connect(self.open_view_settings)
         file_menu.addAction(self.settings_action)
 
-        #Preferences action
+        # Preferences action
         self.preferences_action = QAction("Preferences", self)
         self.preferences_action.triggered.connect(self.open_preferences)
         file_menu.addAction(self.preferences_action)
