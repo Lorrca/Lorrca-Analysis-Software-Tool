@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QPushButton, QVBoxLayout, QMessageBox
+from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QPushButton, QVBoxLayout, \
+    QMessageBox, QCheckBox
 
 DEFAULT_WIDTH = 1920
 DEFAULT_HEIGHT = 1080
@@ -9,13 +10,14 @@ DEFAULT_TITLE = "Plot"
 
 
 class ExportDialog(QDialog):
-    def __init__(self, parent=None, x_label=DEFAULT_X_LABEL, y_label=DEFAULT_Y_LABEL, title=DEFAULT_TITLE):
+    def __init__(self, parent=None, x_label=DEFAULT_X_LABEL, y_label=DEFAULT_Y_LABEL,
+                 title=DEFAULT_TITLE):
         super().__init__(parent)
         self.setWindowTitle("Export Plot Settings")
         self.layout = QFormLayout(self)
 
         # Add form fields for export settings
-        self.filename_input = QLineEdit(title, self) # Set to title as default value
+        self.filename_input = QLineEdit(title, self)  # Set to title as default value
         self.layout.addRow("Filename (required):", self.filename_input)
 
         self.width_input = QLineEdit(str(DEFAULT_WIDTH), self)
@@ -36,6 +38,11 @@ class ExportDialog(QDialog):
 
         self.title_input = QLineEdit(title, self)
         self.layout.addRow("Title:", self.title_input)
+
+        # Grid checkbox (default: checked)
+        self.grid_checkbox = QCheckBox("Enable Grid", self)
+        self.grid_checkbox.setChecked(True)
+        self.layout.addRow(self.grid_checkbox)
 
         # Add buttons
         self.buttons_layout = QVBoxLayout()
@@ -68,6 +75,7 @@ class ExportDialog(QDialog):
         x_label = self.x_label_input.text().strip() or DEFAULT_X_LABEL
         y_label = self.y_label_input.text().strip() or DEFAULT_Y_LABEL
         title = self.title_input.text().strip() or DEFAULT_TITLE
+        grid_enabled = self.grid_checkbox.isChecked()
 
         return {
             "filename": filename,
@@ -76,6 +84,6 @@ class ExportDialog(QDialog):
             "dpi": dpi,
             "x_label": x_label,
             "y_label": y_label,
-            "title": title
+            "title": title,
+            "grid": grid_enabled
         }
-

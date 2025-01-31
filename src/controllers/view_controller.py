@@ -67,10 +67,10 @@ class ViewController:
     def get_elements_by_model_id(self, model_id):
         return self._plot_manager.get_elements_by_model_id(model_id)
 
-    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title, grid: bool):
         """Delegate the save plot operation to PlotManager."""
         self._plot_manager.save_plot(
-            filename, width, height, dpi, x_label, y_label, title
+            filename, width, height, dpi, x_label, y_label, title, grid
         )
 
     def update_canvas(self):

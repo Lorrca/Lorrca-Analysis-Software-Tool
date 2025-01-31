@@ -296,7 +296,7 @@ class MeasurementUI(QWidget):
                         self.controller.save_plot(
                             filename, settings["width"], settings["height"],
                             settings["dpi"], settings["x_label"],
-                            settings["y_label"], settings["title"]
+                            settings["y_label"], settings["title"], settings["grid"]
                         )
                         QMessageBox.information(self, "Export Successful",
                                                 f"Plot saved as {filename}")

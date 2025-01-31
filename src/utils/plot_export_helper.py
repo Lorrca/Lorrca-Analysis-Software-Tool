@@ -1,4 +1,6 @@
 import matplotlib
+from matplotlib.figure import Figure
+
 matplotlib.use('Agg')  # Use a non-interactive backend
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
@@ -145,24 +147,34 @@ def copy_legend(ax, new_ax, new_handles, new_labels):
             loc='best'
         )
 
+
 # Function to save a plot with optional customization
 def save_plot_with_clone(fig, filename, width=None, height=None, dpi=None, x_label=None,
-                         y_label=None, title=None):
+                         y_label=None, title=None, grid=None):
     """Create a new figure from the original, apply changes to it, and save it as a PNG file."""
-    cloned_fig = create_new_figure_from_existing(fig)  # Create a new independent figure
+    if not isinstance(fig, Figure):
+        raise TypeError("Expected 'fig' to be a matplotlib Figure instance.")
+    try:
+        cloned_fig = create_new_figure_from_existing(
+            fig)  # Ensure this function is well-defined
 
-    # Apply optional customizations
-    if width and height and dpi:
-        cloned_fig.set_size_inches(width / dpi, height / dpi)
-    if x_label or y_label or title:
+        # Set figure size only if valid dimensions are provided
+        if width and height:
+            cloned_fig.set_size_inches(width / dpi, height / dpi)
+
+        # Apply optional customizations
         for ax in cloned_fig.axes:
-            if x_label:
+            if x_label is not None:
                 ax.set_xlabel(x_label)
-            if y_label:
+            if y_label is not None:
                 ax.set_ylabel(y_label)
-            if title:
+            if title is not None:
                 ax.set_title(title)
+            if grid is not None:
+                ax.grid(grid)
 
-    # Save the cloned figure as an image
-    cloned_fig.savefig(filename, format='png', dpi=dpi)
-    plt.close(cloned_fig)  # Close the cloned figure to free memory
+            # Save the cloned figure as an image
+        cloned_fig.savefig(filename, format='png', dpi=dpi)
+        plt.close(cloned_fig)  # Close the cloned figure to free memory
+    except Exception as e:
+        print(f"Error saving plot: {e}")

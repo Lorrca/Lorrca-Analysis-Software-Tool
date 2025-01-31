@@ -16,7 +16,6 @@ class PlotManager:
         self.elements = {}  # Store plot elements by their unique ID
         self.fig, self.ax = plt.subplots()  # Initialize the figure and axis for plotting
         plt.ion()  # Enable interactive mode
-        self.grid = True
 
     def get_figure(self):
         """Return the figure object for external manipulation."""
@@ -91,13 +90,13 @@ class PlotManager:
         self.ax.set_title(title)
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
-        self.ax.grid(self.grid)
+        self.ax.grid(True)
 
         # Add a legend only if there are any plot elements
         if self.ax.has_data():
             self.ax.legend()  # Add a legend for better readability
 
-    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title, grid):
         """Export the plot as an image with the specified parameters."""
         try:
             # Ensure the results folder exists
@@ -108,8 +107,7 @@ class PlotManager:
 
             # Save the plot using the helper function
             save_plot_with_clone(self.fig, filename=filepath, width=width, height=height, dpi=dpi,
-                                 x_label=x_label, y_label=y_label, title=title,
-                                 )
+                                 x_label=x_label, y_label=y_label, title=title, grid=grid)
 
             logger.info(f"Plot saved successfully as {filepath}")
         except Exception as e:
