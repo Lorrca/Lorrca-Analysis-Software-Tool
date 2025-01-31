@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 
 from src.base_classes.base_plugin import BasePlugin, UnionList
-from src.models.hc_model import BatchModel
+from src.models.batch_model import BatchModel
 
 
 class BaseBatchPlugin(BasePlugin, ABC):

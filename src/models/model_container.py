@@ -4,7 +4,7 @@ from typing import Set, List, Union, Optional
 
 from src.base_classes.base_scan_model import BaseScanModel
 from src.enums.enums import ContainerType
-from src.models.hc_model import BatchModel
+from src.models.batch_model import BatchModel
 from src.models.osmo_data_loader import OsmoDataLoader
 from src.models.oxy_data_loader import OxyDataLoader
 from src.utils.file_reader_helper import FileHelper

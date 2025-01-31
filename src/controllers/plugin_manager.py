@@ -6,7 +6,7 @@ import os
 from src.base_classes.base_batch_plugin import BaseBatchPlugin
 from src.base_classes.base_plugin import BasePlugin
 from src.base_classes.base_scan_model import BaseScanModel
-from src.models.hc_model import BatchModel
+from src.models.batch_model import BatchModel
 
 PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               '../plugins')
