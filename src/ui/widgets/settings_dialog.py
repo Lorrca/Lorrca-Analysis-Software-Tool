@@ -120,8 +120,8 @@ class ViewSettingsDialog(QDialog):
         self.hc_models_list.clear()
 
         # Update HC Plugins
-        hc_plugins = self.controller.get_hc_plugins()
-        for plugin in hc_plugins:
+        batch_plugins = self.controller.get_batch_plugins()
+        for plugin in batch_plugins:
             item = QListWidgetItem(plugin["name"])
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(
@@ -130,8 +130,8 @@ class ViewSettingsDialog(QDialog):
             self.hc_plugins_list.addItem(item)
 
         # Update HC Models
-        hc_models = self.controller.get_hc_models()
-        for model, selected in hc_models:
+        batch_models = self.controller.get_batch_models()
+        for model, selected in batch_models:
             item = QListWidgetItem(model.name)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Checked if selected else Qt.CheckState.Unchecked)
@@ -140,12 +140,12 @@ class ViewSettingsDialog(QDialog):
 
         # Disconnect signals before connection them again
         self.hc_plugins_list.itemChanged.disconnect(
-            partial(self.handle_plugin_item_changed, is_hc=True))
+            partial(self.handle_plugin_item_changed, is_batch=True))
         self.hc_models_list.itemChanged.disconnect(self.handle_model_item_changed)
 
         # Reconnect the signals
         self.hc_plugins_list.itemChanged.connect(
-            partial(self.handle_plugin_item_changed, is_hc=True))
+            partial(self.handle_plugin_item_changed, is_batch=True))
         self.hc_models_list.itemChanged.connect(self.handle_model_item_changed)
 
     def handle_model_item_changed(self, item):
@@ -153,11 +153,11 @@ class ViewSettingsDialog(QDialog):
         selected = item.checkState() == Qt.CheckState.Checked
         self.controller.update_model_selection(model_id, selected)
 
-    def handle_plugin_item_changed(self, item, is_hc=False):
+    def handle_plugin_item_changed(self, item, is_batch=False):
         """Handle state change of the plugin list item."""
         plugin_id = item.data(Qt.ItemDataRole.UserRole)
         selected = item.checkState() == Qt.CheckState.Checked
-        self.controller.update_plugin_selection(plugin_id, selected, is_hc)
+        self.controller.update_plugin_selection(plugin_id, selected, is_batch)
 
     def update_canvas(self):
         """Handle the Update Canvas button click."""

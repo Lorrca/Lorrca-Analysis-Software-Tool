@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 
@@ -75,16 +76,26 @@ class PlotManager:
 
         self.ax.clear()
 
+        # Get default color cycle
+        color_cycle = itertools.cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+
         # Collect elements that should be rendered
         elements_to_render = [self.get_element_by_id(eid) for eid in selected_element_ids if
                               self.get_element_by_id(eid)]
 
         # Always render HC elements
-        always_visible_elements = [element for element in self.elements.values() if element.is_hc]
+        always_visible_elements = [element for element in self.elements.values() if
+                                   element.is_batch]
 
-        # Render all elements
+        # Store colors for elements
+        element_colors = {}
+
+        # Render all elements with assigned colors
         for element in elements_to_render + always_visible_elements:
-            element.render(self.ax)
+            if element not in element_colors:
+                element_colors[element] = next(color_cycle)  # Assign unique color
+
+            element.render(self.ax, color=element_colors[element])  # Pass color to render
 
         # Reapply the title, labels, and grid state
         self.ax.set_title(title)

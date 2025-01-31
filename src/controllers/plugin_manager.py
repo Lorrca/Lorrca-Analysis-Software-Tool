@@ -3,10 +3,10 @@ import inspect
 import logging
 import os
 
-from src.base_classes.base_hc_plugin import BaseHCPlugin
+from src.base_classes.base_batch_plugin import BaseBatchPlugin
 from src.base_classes.base_plugin import BasePlugin
 from src.base_classes.base_scan_model import BaseScanModel
-from src.models.hc_model import HCModel
+from src.models.hc_model import BatchModel
 
 PLUGINS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               '../plugins')
@@ -65,7 +65,7 @@ class PluginManager:
                     # Store plugin instance
                     self.plugins[plugin_instance.id] = plugin_instance
                     # Set default selection state to True
-                    if isinstance(plugin_instance, BaseHCPlugin):
+                    if isinstance(plugin_instance, BaseBatchPlugin):
                         self.plugin_selection[plugin_instance.id] = False
                     else:
                         self.plugin_selection[plugin_instance.id] = True
@@ -82,22 +82,22 @@ class PluginManager:
             return
 
         try:
-            if isinstance(plugin_instance, BaseHCPlugin):
-                self._run_hc_plugin(plugin_instance)
+            if isinstance(plugin_instance, BaseBatchPlugin):
+                self._run_batch_plugin(plugin_instance)
             elif isinstance(plugin_instance, BasePlugin):
                 self._run_base_plugin(plugin_instance)
         except Exception as e:
             logger.error(f"Error running plugin_instance {plugin_instance.plugin_name}: {e}")
 
-    def _run_hc_plugin(self, plugin_instance):
-        """Run the HC plugin for all HC models."""
-        selected_models = self.model_container.get_hc_selected_models()
+    def _run_batch_plugin(self, plugin_instance):
+        """Run the Batch plugin for all Batch models."""
+        selected_models = self.model_container.get_selected_batch_models()
         if not selected_models:
             logger.warning("No models selected to run the plugin on.")
             return
 
-        for hc_model in selected_models:
-            plugin_instance.run_plugin(hc_model)
+        for batch_model in selected_models:
+            plugin_instance.run_plugin(batch_model)
 
         logger.info(f"Ran plugin: {plugin_instance.plugin_name} on selected models.")
 
@@ -129,8 +129,8 @@ class PluginManager:
 
             # Determine the plugin type based on the model type
             plugin_class = None
-            if isinstance(model, HCModel):
-                plugin_class = BaseHCPlugin
+            if isinstance(model, BatchModel):
+                plugin_class = BaseBatchPlugin
             elif isinstance(model, BaseScanModel):
                 plugin_class = BasePlugin
 
@@ -174,18 +174,18 @@ class PluginManager:
         else:
             logger.warning(f"Plugin with ID {plugin_id} not found.")
 
-    def get_plugins(self, hc_plugins=False):
+    def get_plugins(self, batch_plugins=False):
         """
         Return a list of plugins with their selection state.
 
-        :param hc_plugins: If True, return only Healthy Control plugins (BaseHCPlugin).
-                           If False, return only standard plugins (BasePlugin excluding BaseHCPlugin).
+        :param batch_plugins: If True, return only Batch plugins (BaseBatchPlugin).
+                           If False, return only standard plugins (BasePlugin excluding BaseBatchPlugin).
         """
 
         def is_valid_plugin(plugin):
             return (
-                isinstance(plugin, BaseHCPlugin) if hc_plugins
-                else isinstance(plugin, BasePlugin) and not isinstance(plugin, BaseHCPlugin)
+                isinstance(plugin, BaseBatchPlugin) if batch_plugins
+                else isinstance(plugin, BasePlugin) and not isinstance(plugin, BaseBatchPlugin)
             )
 
         return [
