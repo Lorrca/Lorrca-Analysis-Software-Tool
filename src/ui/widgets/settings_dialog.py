@@ -108,6 +108,10 @@ class ViewSettingsDialog(QDialog):
             item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
             self.plugin_list.addItem(item)
 
+        # Disconnect signal before connection it again
+        self.plugin_list.itemChanged.connect(self.handle_plugin_item_changed)
+
+        # Reconnect the signal
         self.plugin_list.itemChanged.connect(self.handle_plugin_item_changed)
 
     def update_healthy_control_lists(self):
@@ -134,6 +138,12 @@ class ViewSettingsDialog(QDialog):
             item.setData(Qt.ItemDataRole.UserRole, model.id)
             self.hc_models_list.addItem(item)
 
+        # Disconnect signals before connection them again
+        self.hc_plugins_list.itemChanged.disconnect(
+            partial(self.handle_plugin_item_changed, is_hc=True))
+        self.hc_models_list.itemChanged.disconnect(self.handle_model_item_changed)
+
+        # Reconnect the signals
         self.hc_plugins_list.itemChanged.connect(
             partial(self.handle_plugin_item_changed, is_hc=True))
         self.hc_models_list.itemChanged.connect(self.handle_model_item_changed)
