@@ -7,6 +7,7 @@ import uuid
 @dataclass
 class BaseScanModel(ABC):
     """Abstract base class for measurement data and metadata."""
+    name: str
     data: dict[str, np.ndarray]
     metadata: dict
     id: str = field(default_factory=lambda: str(uuid.uuid4()))  # Automatically assign an ID

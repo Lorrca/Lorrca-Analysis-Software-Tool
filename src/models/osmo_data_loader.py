@@ -1,3 +1,5 @@
+import os
+
 from src.base_classes.base_data_loader import BaseDataLoader
 from src.models.osmo_model import OsmoModel
 from src.utils.data_validator import DataValidator
@@ -6,7 +8,7 @@ from src.utils.data_validator import DataValidator
 class OsmoDataLoader(BaseDataLoader):
     """Reader for Osmo measurement files."""
 
-    REQUIRED_DATA_KEYS = {"A", "SdA", "B", "SdB", "Eof", "O.", "EI", "SdEI"}
+    REQUIRED_DATA_KEYS = {"t", "A", "SdA", "B", "SdB", "Eof", "O.", "EI", "SdEI"}
 
     def extract_metadata(self, row, meta_data) -> bool:
         """Specialized metadata extraction for osmo files."""
@@ -36,4 +38,6 @@ class OsmoDataLoader(BaseDataLoader):
             raise ValueError(
                 f"File '{filepath}' failed validation. Check its structure and content.")
 
-        return OsmoModel(data=data, metadata=meta_data)
+        filename = os.path.splitext(os.path.basename(filepath))[0]
+
+        return OsmoModel(data=data, metadata=meta_data, name=filename)

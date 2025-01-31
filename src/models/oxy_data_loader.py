@@ -1,3 +1,5 @@
+import os
+
 from src.base_classes.base_data_loader import BaseDataLoader
 from src.models.oxy_model import OxyModel
 from src.utils.data_validator import DataValidator
@@ -6,7 +8,7 @@ from src.utils.data_validator import DataValidator
 class OxyDataLoader(BaseDataLoader):
     """Reader for Oxy measurement files."""
 
-    REQUIRED_DATA_KEYS = {"A", "B", "EI", "pO2", "N2"}
+    REQUIRED_DATA_KEYS = {"t", "A", "B", "EI", "pO2", "N2"}
 
     def extract_metadata(self, row, meta_data) -> bool:
         """Specialized metadata extraction for oxy files."""
@@ -17,7 +19,8 @@ class OxyDataLoader(BaseDataLoader):
             "Upper limit area": "upper_limit",
             "Lower limit area": "lower_limit",
             "Data (Y-M-D)": "date",
-            "Patient name": "patient_name"
+            "Patient name": "patient_name",
+            "Balalalal": "hsdhsdfhsdf"
         }
 
         for key, metadata_key in metadata_mappings.items():
@@ -35,4 +38,6 @@ class OxyDataLoader(BaseDataLoader):
             raise ValueError(
                 f"File '{filepath}' failed validation. Check its structure and content.")
 
-        return OxyModel(data=data, metadata=meta_data)
+        filename = os.path.splitext(os.path.basename(filepath))[0]
+
+        return OxyModel(data=data, metadata=meta_data, name=filename)

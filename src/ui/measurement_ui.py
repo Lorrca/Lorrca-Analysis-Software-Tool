@@ -25,7 +25,8 @@ class MeasurementUI(QWidget):
         self.main_layout.addWidget(self.main_frame)
         self.setLayout(self.main_layout)
 
-        self.drag_drop_widget = DragDropWidget(self.initial_file_load)  # Existing drag and drop widget
+        self.drag_drop_widget = DragDropWidget(
+            self.initial_file_load)  # Existing drag and drop widget
         self.main_frame_layout = QStackedLayout(self.main_frame)
         self.main_frame_layout.addWidget(self.drag_drop_widget)
 
@@ -187,15 +188,6 @@ class MeasurementUI(QWidget):
                     selected_elements.setdefault(model_id, set()).add(
                         element_item.data(0, Qt.ItemDataRole.UserRole))
         return selected_elements
-
-    def _update_or_create_model_item(self, model, is_selected, selected_elements_before_update):
-        """Update an existing model item or create a new one."""
-        model_item = self.find_item_by_model_id(model.id)
-
-        if model_item:
-            self._update_existing_model_item(model_item, model)
-        else:
-            self._create_new_model_item(model, is_selected)
 
     def _update_existing_model_item(self, model_item, model):
         """Update an existing model item and its elements."""
