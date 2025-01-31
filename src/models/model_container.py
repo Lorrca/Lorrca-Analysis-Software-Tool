@@ -61,10 +61,11 @@ class ModelContainer:
             self._load_batch()
 
     def _load_batch(self):
-        """Load all batch  models from subfolders within the HC folder."""
+        """Load all batch models from subfolders within the HC folder."""
+        # Ensure the HC folder exists
         if not os.path.isdir(HC_FOLDER):
-            logger.error(f"HC folder is not a directory: {HC_FOLDER}")
-            return
+            logger.info(f"HC folder does not exist. Creating: {HC_FOLDER}")
+            os.makedirs(HC_FOLDER, exist_ok=True)
 
         # Iterate over subfolders in the HC folder
         for folder_name in os.listdir(HC_FOLDER):

@@ -26,8 +26,8 @@ class PluginManager:
         """Loads all plugins from the plugins folder."""
         self.plot_manager = plot_manager
         if not os.path.isdir(PLUGINS_FOLDER):
-            logger.warning(f"Plugin folder {PLUGINS_FOLDER} not found.")
-            return
+            logger.info(f"Plugins folder does not exist. Creating: {PLUGINS_FOLDER}")
+            os.makedirs(PLUGINS_FOLDER, exist_ok=True)
 
         for file_name in os.listdir(PLUGINS_FOLDER):
             if file_name.endswith(".py") and file_name != "__init__.py":

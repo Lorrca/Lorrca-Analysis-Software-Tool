@@ -1,5 +1,6 @@
 import logging
 
+
 from PySide6.QtGui import QIcon, Qt
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QStackedLayout, QVBoxLayout, \
     QPushButton, QToolButton, QLabel, QTreeView, QDialog, QMessageBox, QTreeWidgetItem
@@ -151,7 +152,13 @@ class MeasurementUI(QWidget):
         """
         Update the tree view with measurements and their elements, maintaining selection state.
         """
-        self.tree.itemChanged.disconnect(self.on_item_changed)
+        try:
+            # Attempt to disconnect the signal safely
+                self.tree.itemChanged.disconnect(self.on_item_changed)
+        except TypeError:
+            # If it raises a TypeError, it means the signal is not connected, so we can safely ignore it
+            pass
+
         # Track the selected state before the update
         selected_elements_before_update = self._track_selected_elements()
 

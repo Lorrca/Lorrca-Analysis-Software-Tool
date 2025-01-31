@@ -81,7 +81,7 @@ class ViewSettingsDialog(QDialog):
         self.setMinimumSize(400, 300)
 
         # Update the plugin list on initialization
-        self.update_plugin_list()
+        self.show_plugins()
 
     def show_plugins(self):
         """Show the Plugins list in the main content area."""
@@ -93,29 +93,40 @@ class ViewSettingsDialog(QDialog):
         self.update_healthy_control_lists()
         self.main_content.setCurrentWidget(self.hc_widget)
 
+    @staticmethod
+    def safe_disconnect(signal):
+        """Safely disconnect a signal without raising warnings."""
+        try:
+            signal.disconnect()
+        except TypeError:
+            pass  # No active connection to disconnect, ignore the error
+
     def update_plugin_list(self):
         """Update the plugin list with checkboxes."""
+        self.plugin_list.blockSignals(True)  # Prevent signal triggers during update
         self.plugin_list.clear()
+
         plugins = self.controller.get_plugins()
 
         for plugin in plugins:
             item = QListWidgetItem(plugin["name"])
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-
-            # Set the initial check state based on the plugin's selection
             item.setCheckState(
                 Qt.CheckState.Checked if plugin["selected"] else Qt.CheckState.Unchecked)
-            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])  # Store plugin_id in the item data
+            item.setData(Qt.ItemDataRole.UserRole, plugin["id"])
             self.plugin_list.addItem(item)
 
-        # Disconnect signal before connection it again
-        self.plugin_list.itemChanged.connect(self.handle_plugin_item_changed)
+        self.plugin_list.blockSignals(False)  # Unblock signals after update
 
-        # Reconnect the signal
+        # Safely disconnect the signal if it was connected before reconnecting
+        self.safe_disconnect(self.plugin_list.itemChanged)
         self.plugin_list.itemChanged.connect(self.handle_plugin_item_changed)
 
     def update_healthy_control_lists(self):
         """Update the HC Plugins and Models lists with checkboxes."""
+        self.hc_plugins_list.blockSignals(True)
+        self.hc_models_list.blockSignals(True)
+
         self.hc_plugins_list.clear()
         self.hc_models_list.clear()
 
@@ -138,14 +149,15 @@ class ViewSettingsDialog(QDialog):
             item.setData(Qt.ItemDataRole.UserRole, model.id)
             self.hc_models_list.addItem(item)
 
-        # Disconnect signals before connection them again
-        self.hc_plugins_list.itemChanged.disconnect(
-            partial(self.handle_plugin_item_changed, is_batch=True))
-        self.hc_models_list.itemChanged.disconnect(self.handle_model_item_changed)
+        self.hc_plugins_list.blockSignals(False)
+        self.hc_models_list.blockSignals(False)
 
-        # Reconnect the signals
+        # Safely disconnect the signals before reconnecting them
+        self.safe_disconnect(self.hc_plugins_list.itemChanged)
         self.hc_plugins_list.itemChanged.connect(
             partial(self.handle_plugin_item_changed, is_batch=True))
+
+        self.safe_disconnect(self.hc_models_list.itemChanged)
         self.hc_models_list.itemChanged.connect(self.handle_model_item_changed)
 
     def handle_model_item_changed(self, item):
