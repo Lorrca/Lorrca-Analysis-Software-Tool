@@ -4,7 +4,7 @@ from typing import Set, List, Union, Optional
 
 from src.base_classes.base_scan_model import BaseScanModel
 from src.enums.enums import ContainerType
-from src.models.hc_model import HCModel
+from src.models.batch_model import BatchModel
 from src.models.osmo_data_loader import OsmoDataLoader
 from src.models.oxy_data_loader import OxyDataLoader
 from src.utils.file_reader_helper import FileHelper
@@ -21,7 +21,7 @@ class ModelContainer:
         self.loader: Optional[Union[OsmoDataLoader, OxyDataLoader]] = None  # Current loader
         self.single_models: Set[BaseScanModel] = set()  # Set of loaded models
         self.selection_state: dict[str, bool] = {}  # Track selection state by model ID
-        self.hc_models: Set[HCModel] = set()  # Set of Healthy Control Models
+        self.batch_models: Set[BatchModel] = set()  # Set of Batch Models Models
         self.model_type = None  # Model type (either OsmoModel or OxyModel)
 
     def determine_loader(self, file_path: str) -> Union[
@@ -57,14 +57,15 @@ class ModelContainer:
                 logger.warning(f"Failed to load model from file: {file_path}")
 
         self.single_models.update(models)
-        if not self.hc_models:
-            self._load_hc()
+        if not self.batch_models:
+            self._load_batch()
 
-    def _load_hc(self):
-        """Load all healthy control models from subfolders within the HC folder."""
+    def _load_batch(self):
+        """Load all batch models from subfolders within the HC folder."""
+        # Ensure the HC folder exists
         if not os.path.isdir(HC_FOLDER):
-            logger.error(f"HC folder is not a directory: {HC_FOLDER}")
-            return
+            logger.info(f"HC folder does not exist. Creating: {HC_FOLDER}")
+            os.makedirs(HC_FOLDER, exist_ok=True)
 
         # Iterate over subfolders in the HC folder
         for folder_name in os.listdir(HC_FOLDER):
@@ -83,7 +84,7 @@ class ModelContainer:
             logger.warning(f"No valid CSV files found in folder: {folder_path}")
             return
 
-        hc_model = HCModel(name=folder_name)
+        hc_model = BatchModel(name=folder_name)
 
         self._process_files_in_folder(folder_path, hc_model)
 
@@ -92,7 +93,7 @@ class ModelContainer:
             return
 
         # Add the HCModel to the main collection
-        self.hc_models.add(hc_model)
+        self.batch_models.add(hc_model)
 
     def _process_files_in_folder(self, folder_path, hc_model):
         """Process all CSV files in the folder and add valid models to the HCModel."""
@@ -127,10 +128,10 @@ class ModelContainer:
             logger.error(f"Error loading data from {file_path}: {e}")
             return None
 
-    def get_model_by_id(self, model_id: str) -> BaseScanModel | HCModel | None:
+    def get_model_by_id(self, model_id: str) -> BaseScanModel | BatchModel | None:
         """Retrieve a model by its ID from single_models or hc_models."""
         return next(
-            (model for model in self.single_models | self.hc_models if model.id == model_id),
+            (model for model in self.single_models | self.batch_models if model.id == model_id),
             None
         )
 
@@ -148,18 +149,19 @@ class ModelContainer:
         ]
         return selected_models
 
-    def get_hc_selected_models(self) -> List[HCModel]:
+    def get_selected_batch_models(self) -> List[BatchModel]:
+        """Return a list of selected models based on the selection state."""
         selected_models = [
-            model for model, selected in self.get_hc_models_with_selection()
+            model for model, selected in self.get_batch_models_with_selection()
             if selected
         ]
         return selected_models
 
-    def get_hc_models_with_selection(self) -> List[tuple]:
-        """Return a list of HC models and their selection state."""
+    def get_batch_models_with_selection(self) -> List[tuple]:
+        """Return a list of Batch models and their selection state."""
         return [
             (model, self.selection_state.get(model.id, False))
-            for model in self.hc_models
+            for model in self.batch_models
         ]
 
     def get_models_with_selection(self) -> List[tuple]:

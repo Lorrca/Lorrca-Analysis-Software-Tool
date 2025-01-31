@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 
@@ -16,7 +17,6 @@ class PlotManager:
         self.elements = {}  # Store plot elements by their unique ID
         self.fig, self.ax = plt.subplots()  # Initialize the figure and axis for plotting
         plt.ion()  # Enable interactive mode
-        self.grid = True
 
     def get_figure(self):
         """Return the figure object for external manipulation."""
@@ -76,28 +76,38 @@ class PlotManager:
 
         self.ax.clear()
 
+        # Get default color cycle
+        color_cycle = itertools.cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+
         # Collect elements that should be rendered
         elements_to_render = [self.get_element_by_id(eid) for eid in selected_element_ids if
                               self.get_element_by_id(eid)]
 
         # Always render HC elements
-        always_visible_elements = [element for element in self.elements.values() if element.is_hc]
+        always_visible_elements = [element for element in self.elements.values() if
+                                   element.is_batch]
 
-        # Render all elements
+        # Store colors for elements
+        element_colors = {}
+
+        # Render all elements with assigned colors
         for element in elements_to_render + always_visible_elements:
-            element.render(self.ax)
+            if element not in element_colors:
+                element_colors[element] = next(color_cycle)  # Assign unique color
+
+            element.render(self.ax, color=element_colors[element])  # Pass color to render
 
         # Reapply the title, labels, and grid state
         self.ax.set_title(title)
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
-        self.ax.grid(self.grid)
+        self.ax.grid(True)
 
         # Add a legend only if there are any plot elements
         if self.ax.has_data():
             self.ax.legend()  # Add a legend for better readability
 
-    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title, grid):
         """Export the plot as an image with the specified parameters."""
         try:
             # Ensure the results folder exists
@@ -108,8 +118,7 @@ class PlotManager:
 
             # Save the plot using the helper function
             save_plot_with_clone(self.fig, filename=filepath, width=width, height=height, dpi=dpi,
-                                 x_label=x_label, y_label=y_label, title=title,
-                                 )
+                                 x_label=x_label, y_label=y_label, title=title, grid=grid)
 
             logger.info(f"Plot saved successfully as {filepath}")
         except Exception as e:

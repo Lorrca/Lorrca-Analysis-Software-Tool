@@ -1,9 +1,9 @@
 import os
 from PySide6.QtCore import Qt, QModelIndex, QDir, QUrl
 from PySide6.QtGui import QColor, QPainter, QAction, QDesktopServices
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QTreeView, QSizePolicy, \
-    QFileSystemModel, QMenu, QStyledItemDelegate, QWidget, QDialog, QSpacerItem, QStackedWidget, \
-    QFrame
+from PySide6.QtWidgets import QVBoxLayout, QPushButton, QTreeView, QSizePolicy, \
+    QFileSystemModel, QMenu, QStyledItemDelegate, QWidget, QDialog, QSpacerItem, \
+    QStackedWidget, QFrame, QHBoxLayout
 
 DISABLED_SUFFIX = ".disabled"
 ENABLED_SUFFIX = ".py"
@@ -23,64 +23,61 @@ class DisabledItemDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
 
 
-class PluginsFileSystemModel(QFileSystemModel):
-    def rowCount(self, parent: QModelIndex) -> int:
-        """Override to handle files and directories."""
-        count = super().rowCount(parent)
+class BaseFileBrowser(QWidget):
+    """Base class for file browsers to avoid code duplication."""
 
-        if parent.isValid():
-            dir_path = self.filePath(parent)
-            files = [file for file in os.listdir(dir_path) if file != "__init__.py"]
-            return len(files)
-
-        return count
-
-    def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
-        """Override to handle file and directory selection."""
-        index = super().index(row, column, parent)
-
-        if not index.isValid():
-            return index
-
-        file_info = self.fileInfo(index)
-        if file_info.fileName() == "__init__.py":
-            return QModelIndex()
-
-        return index
-
-
-class PluginView(QWidget):
-    def __init__(self, folder_path, parent=None):
+    def __init__(self, folder_path, name_filters=None, show_context_menu=False, parent=None):
         super().__init__(parent)
 
+        self.folder_path = folder_path
         self.layout = QVBoxLayout(self)
 
-        # File system model and view setup for plugins
-        self.file_model = PluginsFileSystemModel()
-        self.file_model.setRootPath(folder_path)
-        self.file_model.setNameFilters(["*.py", "*.py.disabled"])
-        self.file_model.setNameFilterDisables(False)
-        self.file_model.setFilter(QDir.Filter.Files | QDir.Filter.NoDotAndDotDot)
+        # Ensure the folder exists
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path, exist_ok=True)
 
+        # File system model setup
+        self.file_model = QFileSystemModel()
+        self.file_model.setRootPath(folder_path)
+        self.file_model.setFilter(QDir.Filter.Files | QDir.Filter.Dirs | QDir.Filter.NoDotAndDotDot)
+
+        if name_filters:
+            self.file_model.setNameFilters(name_filters)
+            self.file_model.setNameFilterDisables(False)
+
+        # File browser setup
         self.file_browser = QTreeView(self)
         self.file_browser.setModel(self.file_model)
         self.file_browser.setRootIndex(self.file_model.index(folder_path, 0, QModelIndex()))
         self.file_browser.setColumnWidth(0, 250)
         self.file_browser.setColumnWidth(1, 100)
-        self.file_browser.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.file_browser.customContextMenuRequested.connect(self.show_context_menu)
+
+        # Enable context menu if required
+        if show_context_menu:
+            self.file_browser.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.file_browser.customContextMenuRequested.connect(self.show_context_menu)
 
         # Apply custom item delegate for disabled files
         self.file_browser.setItemDelegate(DisabledItemDelegate(self))
 
         self.layout.addWidget(self.file_browser)
 
-        # Button to open file explorer for plugins folder
-        self.open_explorer_button = QPushButton("Open Plugins Folder")
+        # Button to open folder in file explorer
+        self.open_explorer_button = QPushButton(f"Open {self.windowTitle()} Folder")
         self.open_explorer_button.setSizePolicy(QSizePolicy.Policy.Minimum,
                                                 QSizePolicy.Policy.Fixed)
         self.open_explorer_button.clicked.connect(lambda: open_folder(folder_path))
         self.layout.addWidget(self.open_explorer_button)
+
+    def show_context_menu(self, position):
+        """To be implemented in subclasses if needed."""
+        pass
+
+
+class PluginView(BaseFileBrowser):
+    def __init__(self, folder_path, parent=None):
+        super().__init__(folder_path, name_filters=["*.py", "*.py.disabled"],
+                         show_context_menu=True, parent=parent)
 
     def show_context_menu(self, position):
         """Show context menu for enabling/disabling plugins."""
@@ -120,42 +117,13 @@ class PluginView(QWidget):
         self.file_model.setRootPath(self.file_model.rootPath())
 
         # Optionally update file styles
-        self.update_file_styles()
-
-    def update_file_styles(self):
-        """Update styles for disabled files."""
         self.file_browser.viewport().update()
 
 
-class HealthyControlView(QWidget):
+class HealthyControlView(BaseFileBrowser):
     def __init__(self, folder_path, parent=None):
-        super().__init__(parent)
-
-        self.layout = QVBoxLayout(self)
-
-        # File system model and view setup for Healthy Control with CSV filtering
-        self.file_model = QFileSystemModel()
-        self.file_model.setRootPath(folder_path)
-        self.file_model.setFilter(QDir.Filter.Dirs | QDir.Filter.Files | QDir.Filter.NoDotAndDotDot)
-
-        self.file_browser = QTreeView(self)
-        self.file_browser.setModel(self.file_model)
-        self.file_browser.setRootIndex(self.file_model.index(folder_path, 0, QModelIndex()))
-        self.file_browser.setColumnWidth(0, 250)
-        self.file_browser.setColumnWidth(1, 100)
-        self.file_browser.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-
-        # Apply custom item delegate for disabled files
-        self.file_browser.setItemDelegate(DisabledItemDelegate(self))
-
-        self.layout.addWidget(self.file_browser)
-
-        # Button to open file explorer for Healthy Control folder
-        self.open_explorer_button = QPushButton("Open Healthy Control Folder")
-        self.open_explorer_button.setSizePolicy(QSizePolicy.Policy.Minimum,
-                                                QSizePolicy.Policy.Fixed)
-        self.open_explorer_button.clicked.connect(lambda: open_folder(folder_path))
-        self.layout.addWidget(self.open_explorer_button)
+        super().__init__(folder_path, name_filters=["*.csv"], show_context_menu=False,
+                         parent=parent)
 
 
 class PreferencesDialog(QDialog):

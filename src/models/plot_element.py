@@ -1,8 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from matplotlib.colors import LinearSegmentedColormap
-
 
 # Base class for plot elements
 class PlotElement(ABC):
@@ -12,12 +10,26 @@ class PlotElement(ABC):
         self.plugin = plugin
         self.model = model
         self.kwargs = kwargs
-        self.is_hc = False
+        self.is_batch = False  # True for batch plugin' elements
+        self.is_reference = False  # True if used as a reference in the background
 
     @abstractmethod
     def render(self, ax):
         """Subclasses must implement the render method to plot the element."""
         pass
+
+    def get_render_kwargs(self, color=None):
+        """Returns the keyword arguments for rendering, applying reference styling if necessary."""
+        kwargs = self.kwargs.copy()
+
+        if self.is_reference:
+            kwargs.setdefault("color", "grey")  # Default to grey for reference elements
+            kwargs.setdefault("zorder", -1)  # Ensure it renders in the background
+            kwargs.setdefault("alpha", 0.5)  # Reduce opacity for clarity
+        elif color is not None:  # If not a reference, apply the color from PlotManager
+            kwargs["color"] = color
+
+        return kwargs
 
     @property
     def model_name(self):
@@ -47,10 +59,8 @@ class LineElement(PlotElement):
         self.x = x
         self.y = y
 
-    def render(self, ax):
-        if self.is_hc:
-            self.kwargs["zorder"] = -1
-        ax.plot(self.x, self.y, label=self.label, **self.kwargs)
+    def render(self, ax, color=None):
+        ax.plot(self.x, self.y, label=self.label, **self.get_render_kwargs(color))
 
 
 # Area plot element
@@ -61,11 +71,8 @@ class AreaElement(PlotElement):
         self.y1 = y1
         self.y2 = y2
 
-    def render(self, ax):
-        if self.is_hc:
-            self.kwargs["zorder"] = -1
-        ax.fill_between(self.x, self.y1, self.y2, label=self.label,
-                        **self.kwargs)
+    def render(self, ax, color=None):
+        ax.fill_between(self.x, self.y1, self.y2, label=self.label, **self.get_render_kwargs(color))
 
 
 # Scatter plot element
@@ -75,30 +82,19 @@ class ScatterElement(PlotElement):
         self.x = x
         self.y = y
 
-    def render(self, ax):
-        if self.is_hc:
-            self.kwargs["zorder"] = -1
-        ax.scatter(self.x, self.y, label=self.label, **self.kwargs)
+    def render(self, ax, color=None):
+        ax.scatter(self.x, self.y, label=self.label, **self.get_render_kwargs(color))
 
 
+# Composite Line plot element
 class CompositeLineElement(PlotElement):
     def __init__(self, lines: list[tuple], label, plugin, model, **kwargs):
         super().__init__(label, plugin, model, **kwargs)
         self.lines = lines
 
-    def render(self, ax):
+    def render(self, ax, color=None):
+        kwargs = self.get_render_kwargs(color)
         for i, (x, y) in enumerate(self.lines):
-            kwargs = self.kwargs.copy()
-
-            # If it's an HC element, set the color to grey
-            if self.is_hc:
-                color = "grey"  # Make HC lines grey
-                kwargs["color"] = color
-                kwargs["zorder"] = -1  # Always render in the background
-
-            if i == 0:
-                kwargs["label"] = self.label
-            else:
-                kwargs["label"] = "_nolegend_"
-
-            ax.plot(x, y, **kwargs)
+            line_kwargs = kwargs.copy()
+            line_kwargs["label"] = self.label if i == 0 else "_nolegend_"
+            ax.plot(x, y, **line_kwargs)

@@ -67,10 +67,10 @@ class ViewController:
     def get_elements_by_model_id(self, model_id):
         return self._plot_manager.get_elements_by_model_id(model_id)
 
-    def save_plot(self, filename, width, height, dpi, x_label, y_label, title):
+    def save_plot(self, filename, width, height, dpi, x_label, y_label, title, grid: bool):
         """Delegate the save plot operation to PlotManager."""
         self._plot_manager.save_plot(
-            filename, width, height, dpi, x_label, y_label, title
+            filename, width, height, dpi, x_label, y_label, title, grid
         )
 
     def update_canvas(self):
@@ -84,11 +84,11 @@ class ViewController:
         else:
             self._plot_manager.remove_elements_by_model_id(model_id)
 
-    def update_plugin_selection(self, plugin_id, selected, is_hc=False):
+    def update_plugin_selection(self, plugin_id, selected, is_batch=False):
         self._plugin_manager.set_plugin_selection(plugin_id, selected)
 
         if self.view:
-            if not is_hc:
+            if not is_batch:
                 self.view.update_measurement_tree_widget()
         else:
             logger.warning("View is not registered. Measurement tree update skipped.")
@@ -96,11 +96,11 @@ class ViewController:
     def get_plugins(self):
         return self._plugin_manager.get_plugins()
 
-    def get_hc_plugins(self):
-        return self._plugin_manager.get_plugins(hc_plugins=True)
+    def get_batch_plugins(self):
+        return self._plugin_manager.get_plugins(batch_plugins=True)
 
-    def get_hc_models(self):
-        return self._model_container.get_hc_models_with_selection()
+    def get_batch_models(self):
+        return self._model_container.get_batch_models_with_selection()
 
     def __del__(self):
         """Notify when the controller is deleted."""

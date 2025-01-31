@@ -6,8 +6,8 @@ from src.base_classes.base_scan_model import BaseScanModel
 
 
 @dataclass
-class HCModel:
-    """Model for Healthy Control data."""
+class BatchModel:
+    """Model for Batch data."""
     name: str
     models: List[BaseScanModel] = field(default_factory=list)
     models_selection: dict[str, bool] = field(default_factory=dict)
@@ -21,7 +21,7 @@ class HCModel:
             self.models.append(model)
             self.models_selection[model.id] = True
         else:
-            print(f"Model {model} already exists in HC_Model")
+            print(f"Model {model} already exists in Batch_Model")
 
     def remove_model(self, model: BaseScanModel):
         if model in self.models:
@@ -41,9 +41,9 @@ class HCModel:
 
     def __eq__(self, other):
         """Equality based on unique ID."""
-        if not isinstance(other, HCModel):
+        if not isinstance(other, BatchModel):
             return False
         return self.id == other.id
 
     def __repr__(self):
-        return f"HC_Model(name={self.name}, id={self.id}, models_count={len(self.models)})"
+        return f"Batch Model(name={self.name}, id={self.id}, models_count={len(self.models)})"

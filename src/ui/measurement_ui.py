@@ -1,5 +1,6 @@
 import logging
 
+
 from PySide6.QtGui import QIcon, Qt
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QStackedLayout, QVBoxLayout, \
     QPushButton, QToolButton, QLabel, QTreeView, QDialog, QMessageBox, QTreeWidgetItem
@@ -25,7 +26,8 @@ class MeasurementUI(QWidget):
         self.main_layout.addWidget(self.main_frame)
         self.setLayout(self.main_layout)
 
-        self.drag_drop_widget = DragDropWidget(self.initial_file_load)  # Existing drag and drop widget
+        self.drag_drop_widget = DragDropWidget(
+            self.initial_file_load)  # Existing drag and drop widget
         self.main_frame_layout = QStackedLayout(self.main_frame)
         self.main_frame_layout.addWidget(self.drag_drop_widget)
 
@@ -150,7 +152,13 @@ class MeasurementUI(QWidget):
         """
         Update the tree view with measurements and their elements, maintaining selection state.
         """
-        self.tree.itemChanged.disconnect(self.on_item_changed)
+        try:
+            # Attempt to disconnect the signal safely
+                self.tree.itemChanged.disconnect(self.on_item_changed)
+        except TypeError:
+            # If it raises a TypeError, it means the signal is not connected, so we can safely ignore it
+            pass
+
         # Track the selected state before the update
         selected_elements_before_update = self._track_selected_elements()
 
@@ -187,15 +195,6 @@ class MeasurementUI(QWidget):
                     selected_elements.setdefault(model_id, set()).add(
                         element_item.data(0, Qt.ItemDataRole.UserRole))
         return selected_elements
-
-    def _update_or_create_model_item(self, model, is_selected, selected_elements_before_update):
-        """Update an existing model item or create a new one."""
-        model_item = self.find_item_by_model_id(model.id)
-
-        if model_item:
-            self._update_existing_model_item(model_item, model)
-        else:
-            self._create_new_model_item(model, is_selected)
 
     def _update_existing_model_item(self, model_item, model):
         """Update an existing model item and its elements."""
@@ -304,7 +303,7 @@ class MeasurementUI(QWidget):
                         self.controller.save_plot(
                             filename, settings["width"], settings["height"],
                             settings["dpi"], settings["x_label"],
-                            settings["y_label"], settings["title"]
+                            settings["y_label"], settings["title"], settings["grid"]
                         )
                         QMessageBox.information(self, "Export Successful",
                                                 f"Plot saved as {filename}")

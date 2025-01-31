@@ -1,10 +1,10 @@
-from src.base_classes.base_hc_plugin import BaseHCPlugin
+from src.base_classes.base_batch_plugin import BaseBatchPlugin
 from src.enums.enums import PluginType
 from src.enums.plugin_decorators import plugin_type
 
 
 @plugin_type(PluginType.OXY)
-class OsmoHealthControl(BaseHCPlugin):
+class OsmoHealthControl(BaseBatchPlugin):
     @property
     def plugin_name(self):
         return "Oxy_hc"

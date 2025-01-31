@@ -1,13 +1,13 @@
 import numpy as np
 
-from src.base_classes.base_hc_plugin import BaseHCPlugin
+from src.base_classes.base_batch_plugin import BaseBatchPlugin
 
 from src.enums.enums import PluginType
 from src.enums.plugin_decorators import plugin_type
 
 
 @plugin_type(PluginType.OSMO)
-class OsmoHealthControl(BaseHCPlugin):
+class OsmoHealthControl(BaseBatchPlugin):
     @property
     def plugin_name(self):
         return "Osmo_hc"
@@ -45,10 +45,10 @@ class OsmoHealthControl(BaseHCPlugin):
         for model in self.model.models:
             self.lines.append((model.O, model.EI))
 
-        self.add_composite_line_element(self.lines, label="Combined pO2 vs EI", alpha=0.5)
+        self.add_composite_line_element(self.lines, label="Combined pO2 vs EI")
 
         # Calculate the average line
         avg_x, avg_y = self.calculate_average_line()
 
         # Add the average line
-        self.add_line_element(avg_x, avg_y, label="Average pO2 vs EI", color="crimson")
+        self.add_line_element(avg_x, avg_y, label="Average pO2 vs EI")
