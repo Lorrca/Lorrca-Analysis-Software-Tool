@@ -19,8 +19,7 @@ class OxyDataLoader(BaseDataLoader):
             "Upper limit area": "upper_limit",
             "Lower limit area": "lower_limit",
             "Data (Y-M-D)": "date",
-            "Patient name": "patient_name",
-            "Balalalal": "hsdhsdfhsdf"
+            "Patient name": "patient_name"
         }
 
         for key, metadata_key in metadata_mappings.items():
