@@ -9414,3 +9414,6 @@
 /.venv/Scripts/ttx.exe
 /.venv/share/man/man1/ttx.1
 /.venv/pyvenv.cfg
+
+**/__pycache__/**
+/.idea/
